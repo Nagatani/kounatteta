@@ -9,12 +9,12 @@
   <link rel="manifest" href="./manifest.json?v=1.1.0">
   <link rel="icon" type="image/svg+xml" href="./icons/icon.svg?v=1.1.0">
   <link rel="apple-touch-icon" href="./icons/icon.svg?v=1.1.0">
-  <link rel="stylesheet" href="./styles.css">
-  <script defer src="./js/templates.js"></script>
-  <script defer src="./js/custom.js"></script>
-  <script defer src="./js/renderer.js"></script>
-  <script defer src="./js/rig-editor.js"></script>
-  <script defer src="./js/app.js"></script>
+  <link rel="stylesheet" href="./styles.css?v=1.1.0">
+  <script defer src="./js/templates.js?v=1.1.0"></script>
+  <script defer src="./js/custom.js?v=1.1.0"></script>
+  <script defer src="./js/renderer.js?v=1.1.0"></script>
+  <script defer src="./js/rig-editor.js?v=1.1.0"></script>
+  <script defer src="./js/app.js?v=1.1.0"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -321,6 +321,18 @@
       <button type="button" class="secondary-btn compact-btn" id="btn-rig-clear">クリア</button>
       <button type="button" class="primary-btn compact-btn" id="btn-rig-save">保存して登録</button>
     </div>
+  </dialog>
+
+  <!-- 汎用確認ダイアログ（データ削除・キャッシュクリア確認用） -->
+  <dialog class="modal-dialog" id="dialog-confirm" closedby="any" aria-labelledby="dialog-confirm-title">
+    <div class="sheet-header">
+      <h2 id="dialog-confirm-title">確認</h2>
+    </div>
+    <p class="modal-desc" id="dialog-confirm-desc"></p>
+    <form method="dialog" class="modal-actions">
+      <button type="submit" value="cancel" class="secondary-btn" autofocus>キャンセル</button>
+      <button type="submit" value="confirm" class="danger-btn" id="btn-confirm-ok">実行する</button>
+    </form>
   </dialog>
 </body>
 </html>

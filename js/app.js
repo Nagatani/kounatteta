@@ -8,7 +8,8 @@
   const NS = global.SituDiagram;
   const Renderer = NS.Renderer;
 
-  const APP_VERSION = '1.1.0';
+  const FALLBACK_VERSION = '1.1.0';
+  let appVersion = FALLBACK_VERSION;
   const STORAGE_KEY = 'situ-diagram-state-v4';
   const RATIOS = [
     { id: '1:1', label: '1:1', width: 600, height: 600 },
@@ -95,6 +96,12 @@
   const btnResetStorage = document.getElementById('btn-reset-storage');
   const pwaInstallHint = document.getElementById('pwa-install-hint');
 
+  // 汎用確認ダイアログ
+  const dialogConfirm = document.getElementById('dialog-confirm');
+  const dialogConfirmTitle = document.getElementById('dialog-confirm-title');
+  const dialogConfirmDesc = document.getElementById('dialog-confirm-desc');
+  const btnConfirmOk = document.getElementById('btn-confirm-ok');
+
   let swRegistration = null;
   let deferredInstallPrompt = null;
   let isReloadingForUpdate = false;
@@ -128,6 +135,25 @@
     toastTimer = setTimeout(() => {
       hintToast.classList.remove('visible');
     }, 2200);
+  }
+
+  // ネイティブ <dialog> による汎用確認ダイアログ
+  function confirmAction({ title, message, confirmLabel }) {
+    return new Promise((resolve) => {
+      dialogConfirmTitle.textContent = title;
+      dialogConfirmDesc.textContent = message;
+      btnConfirmOk.textContent = confirmLabel || '実行する';
+
+      function handleClose() {
+        const result = dialogConfirm.returnValue === 'confirm';
+        dialogConfirm.returnValue = '';
+        dialogConfirm.removeEventListener('close', handleClose);
+        resolve(result);
+      }
+
+      dialogConfirm.addEventListener('close', handleClose);
+      dialogConfirm.showModal();
+    });
   }
 
   // --- 履歴（Undo / Redo）＆自動保存 ---
@@ -514,6 +540,12 @@
       btnDel.textContent = '削除';
       btnDel.setAttribute('aria-label', `${item.name}を削除`);
       btnDel.addEventListener('click', async () => {
+        const ok = await confirmAction({
+          title: `「${item.name}」を削除しますか？`,
+          message: '登録したカスタムオブジェクトが削除されます。この操作は元に戻せません。',
+          confirmLabel: '削除する'
+        });
+        if (!ok) return;
         await NS.Custom.deleteItem(item.id);
         renderCustomGrid();
         showToast(`「${item.name}」を削除しました`);
@@ -992,8 +1024,25 @@
     );
   }
 
+  // manifest.json の version を設定元として動的に読み込む
+  async function loadManifestVersion() {
+    try {
+      const link = document.querySelector('link[rel="manifest"]');
+      const url = (link && link.getAttribute('href')) || './manifest.json';
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) return;
+      const manifest = await res.json();
+      if (manifest && typeof manifest.version === 'string' && manifest.version.trim()) {
+        appVersion = manifest.version.trim();
+        appInfoVersion.textContent = 'v' + appVersion;
+      }
+    } catch (_) {
+      // file:// 起動時などはフォールバック値を使用
+    }
+  }
+
   function refreshAppMenuStatus() {
-    appInfoVersion.textContent = 'v' + APP_VERSION;
+    appInfoVersion.textContent = 'v' + appVersion;
     const standalone = isStandaloneMode();
     appInfoMode.textContent = standalone ? 'PWA（アプリ起動）' : 'ブラウザ表示';
     pwaInstallHint.hidden = standalone || Boolean(deferredInstallPrompt);
@@ -1070,6 +1119,7 @@
 
   btnAppMenu.addEventListener('click', () => {
     refreshAppMenuStatus();
+    loadManifestVersion();
     dialogAppMenu.showModal();
   });
 
@@ -1105,6 +1155,13 @@
   });
 
   btnClearCache.addEventListener('click', async () => {
+    const ok = await confirmAction({
+      title: 'アプリキャッシュを削除しますか？',
+      message: '保存されているアプリのキャッシュをすべて削除し、最新ファイルを再読み込みします（作成中の図解データは残ります）。',
+      confirmLabel: '削除して再読込'
+    });
+    if (!ok) return;
+
     try {
       if ('caches' in window) {
         const keys = await caches.keys();
@@ -1121,7 +1178,14 @@
     window.location.reload();
   });
 
-  btnResetStorage.addEventListener('click', () => {
+  btnResetStorage.addEventListener('click', async () => {
+    const ok = await confirmAction({
+      title: '自動保存データを初期化しますか？',
+      message: '現在キャンバスに自動保存されている図解データが削除され、初期状態に戻ります。この操作は元に戻せません。',
+      confirmLabel: '初期化する'
+    });
+    if (!ok) return;
+
     try {
       for (const key of Object.keys(localStorage)) {
         if (key.startsWith('situ-diagram-state-')) {
@@ -1155,6 +1219,7 @@
     resizeCanvas();
     commitHistory();
     showToast('タップして選択・ドラッグで移動や設定ができます');
+    loadManifestVersion();
     setupPwa();
   }
 

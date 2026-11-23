@@ -1,6 +1,7 @@
 {
   "name": "こうなってた - 状況説明図メーカー",
   "short_name": "こうなってた",
+  "version": "1.1.0",
   "description": "SNS投稿向けに、棒人間・ペット・家具を配置して状況をわかりやすく図解できるシンプル作図ツール",
   "start_url": "./index.html",
   "display": "standalone",

@@ -5,14 +5,14 @@ const CACHE_NAME = 'kounatteta-cache-v' + APP_VERSION;
 const ASSETS = [
   './',
   './index.html',
-  './styles.css',
+  './styles.css?v=' + APP_VERSION,
   './manifest.json?v=' + APP_VERSION,
   './icons/icon.svg?v=' + APP_VERSION,
-  './js/templates.js',
-  './js/custom.js',
-  './js/renderer.js',
-  './js/rig-editor.js',
-  './js/app.js'
+  './js/templates.js?v=' + APP_VERSION,
+  './js/custom.js?v=' + APP_VERSION,
+  './js/renderer.js?v=' + APP_VERSION,
+  './js/rig-editor.js?v=' + APP_VERSION,
+  './js/app.js?v=' + APP_VERSION
 ];
 
 self.addEventListener('install', (event) => {
