@@ -11,6 +11,7 @@ const ASSETS = [
   './js/templates.js',
   './js/custom.js',
   './js/renderer.js',
+  './js/rig-editor.js',
   './js/app.js'
 ];
 

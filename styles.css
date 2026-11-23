@@ -562,8 +562,15 @@
 
   .custom-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    grid-template-columns: 1.25fr 0.85fr 0.95fr;
+    gap: 6px;
+  }
+
+  .compact-btn {
+    height: 38px;
+    padding-inline: 8px;
+    font-size: 0.78rem;
+    white-space: nowrap;
   }
 
   .custom-card {
@@ -613,6 +620,10 @@
     grid-template-columns: 1fr 1fr;
     border-top: 1px solid var(--border-color);
     background: var(--bg-surface);
+  }
+
+  .custom-card-footer.cols-3 {
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .custom-mini-btn {
@@ -907,6 +918,85 @@
 
   .pwa-hint[hidden] {
     display: none;
+  }
+
+  /* カスタムボーン作成エディタ */
+  .rig-editor-dialog[open] {
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .rig-name-input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 38px;
+    padding-inline: 12px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-subtle);
+    font-size: 0.9rem;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  .rig-name-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--bg-surface);
+  }
+
+  .rig-mode-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    background: var(--bg-subtle);
+    padding: 4px;
+    border-radius: var(--radius-sm);
+  }
+
+  .rig-mode-btn {
+    height: 34px;
+    border-radius: 7px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .rig-mode-btn.active {
+    background: var(--bg-surface);
+    color: var(--accent);
+    box-shadow: 0 1px 3px rgb(15 23 42 / 0.08);
+  }
+
+  .rig-canvas-wrap {
+    display: flex;
+    justify-content: center;
+    background: var(--bg-subtle);
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border-color);
+    overflow: hidden;
+    line-height: 0;
+  }
+
+  #rig-editor-canvas {
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 320 / 260;
+    touch-action: none;
+    cursor: crosshair;
+  }
+
+  .rig-editor-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  .rig-editor-footer {
+    display: grid;
+    grid-template-columns: 0.8fr 0.8fr 1.4fr;
+    gap: 8px;
   }
 }
 

@@ -55,6 +55,7 @@
   const customPanel = document.getElementById('custom-panel');
   const customGrid = document.getElementById('custom-grid');
   const customEmpty = document.getElementById('custom-empty');
+  const btnCustomCreateRig = document.getElementById('btn-custom-create-rig');
   const btnCustomAddImage = document.getElementById('btn-custom-add-image');
   const btnCustomImportJson = document.getElementById('btn-custom-import-json');
   const btnCustomAddSample = document.getElementById('btn-custom-add-sample');
@@ -480,7 +481,22 @@
       });
 
       const footer = document.createElement('div');
-      footer.className = 'custom-card-footer';
+      footer.className = 'custom-card-footer' + (item.kind === 'custom-rig' ? ' cols-3' : '');
+
+      if (item.kind === 'custom-rig') {
+        const btnEdit = document.createElement('button');
+        btnEdit.type = 'button';
+        btnEdit.className = 'custom-mini-btn';
+        btnEdit.textContent = '編集';
+        btnEdit.setAttribute('aria-label', `${item.name}を編集`);
+        btnEdit.addEventListener('click', () => {
+          NS.RigEditor.open(item, async (saved) => {
+            await renderCustomGrid();
+            showToast(`「${saved.name}」を更新しました`);
+          });
+        });
+        footer.appendChild(btnEdit);
+      }
 
       const btnExportJson = document.createElement('button');
       btnExportJson.type = 'button';
@@ -510,6 +526,13 @@
       customGrid.appendChild(card);
     }
   }
+
+  btnCustomCreateRig.addEventListener('click', () => {
+    NS.RigEditor.open(null, async (saved) => {
+      await renderCustomGrid();
+      showToast(`「${saved.name}」を登録しました（タップで配置）`);
+    });
+  });
 
   btnCustomAddImage.addEventListener('click', () => {
     inputCustomImage.value = '';

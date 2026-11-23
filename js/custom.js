@@ -292,6 +292,8 @@
     listAll,
     saveItem,
     deleteItem,
+    makeCustomId,
+    fileToOptimizedImage,
     createFromImageFile,
     importFromJsonText,
     exportItemAsJson,

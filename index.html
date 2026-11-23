@@ -13,6 +13,7 @@
   <script defer src="./js/templates.js"></script>
   <script defer src="./js/custom.js"></script>
   <script defer src="./js/renderer.js"></script>
+  <script defer src="./js/rig-editor.js"></script>
   <script defer src="./js/app.js"></script>
 </head>
 <body>
@@ -132,8 +133,9 @@
     <div class="template-grid" id="template-grid"></div>
     <div class="custom-panel" id="custom-panel" hidden>
       <div class="custom-actions">
-        <button type="button" class="primary-btn" id="btn-custom-add-image">＋ 画像を追加</button>
-        <button type="button" class="secondary-btn" id="btn-custom-import-json">JSON読込</button>
+        <button type="button" class="primary-btn compact-btn" id="btn-custom-create-rig">＋ ボーン作成</button>
+        <button type="button" class="secondary-btn compact-btn" id="btn-custom-add-image">＋ 画像</button>
+        <button type="button" class="secondary-btn compact-btn" id="btn-custom-import-json">JSON読込</button>
         <input type="file" id="input-custom-image" accept="image/*" hidden>
         <input type="file" id="input-custom-json" accept=".json,application/json" hidden>
       </div>
@@ -278,6 +280,47 @@
     </div>
 
     <p class="pwa-hint" id="pwa-install-hint">iPhoneは共有ボタン →「ホーム画面に追加」でアプリ化できます。</p>
+  </dialog>
+
+  <!-- カスタムボーン作成エディタ（ネイティブ dialog） -->
+  <dialog class="modal-dialog rig-editor-dialog" id="dialog-rig-editor" aria-labelledby="dialog-rig-editor-title">
+    <div class="sheet-header">
+      <h2 id="dialog-rig-editor-title">ボーン作成</h2>
+      <form method="dialog">
+        <button type="submit" class="close-btn" aria-label="閉じる">✕</button>
+      </form>
+    </div>
+
+    <div class="rig-name-row">
+      <label for="input-rig-name" class="sr-only">オブジェクト名</label>
+      <input type="text" id="input-rig-name" class="rig-name-input" maxlength="20" placeholder="名前（例：うさぎ、自転車など）">
+    </div>
+
+    <div class="rig-mode-tabs" role="group" aria-label="編集ツール">
+      <button type="button" class="rig-mode-btn active" data-mode="bone" aria-pressed="true">関節＋骨</button>
+      <button type="button" class="rig-mode-btn" data-mode="shape" aria-pressed="false">まる図形</button>
+      <button type="button" class="rig-mode-btn" data-mode="image" aria-pressed="false">画像貼付</button>
+    </div>
+
+    <div class="rig-canvas-wrap">
+      <canvas id="rig-editor-canvas" aria-label="ボーン作成キャンバス"></canvas>
+    </div>
+
+    <p class="rig-editor-hint" id="rig-editor-hint">タップで関節を追加・接続、ドラッグで位置調整できます</p>
+
+    <div class="size-row">
+      <label for="input-bone-width">骨の太さ</label>
+      <input type="range" id="input-bone-width" min="8" max="36" step="2" value="16">
+      <output id="output-bone-width" for="input-bone-width">16</output>
+    </div>
+
+    <input type="file" id="input-bone-image" accept="image/*" hidden>
+
+    <div class="rig-editor-footer">
+      <button type="button" class="secondary-btn compact-btn" id="btn-rig-undo" disabled>戻す</button>
+      <button type="button" class="secondary-btn compact-btn" id="btn-rig-clear">クリア</button>
+      <button type="button" class="primary-btn compact-btn" id="btn-rig-save">保存して登録</button>
+    </div>
   </dialog>
 </body>
 </html>

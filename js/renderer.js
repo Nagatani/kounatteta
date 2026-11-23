@@ -390,6 +390,7 @@
       ctx.lineJoin = 'round';
 
       for (const b of bones) {
+        if (b.imageData) continue; // パーツ画像つきボーンは画像レイヤーで描画
         const from = j[b.from];
         const to = j[b.to];
         if (!from || !to) continue;
@@ -424,6 +425,27 @@
     ctx.save();
     drawParts(color, border * 2);
     drawParts('#ffffff', 0);
+
+    // パーツ画像つきボーン（パペット描画：2関節の向き・距離に追従）
+    for (const b of bones) {
+      if (!b.imageData) continue;
+      const from = j[b.from];
+      const to = j[b.to];
+      if (!from || !to) continue;
+      const entry = getCachedImage(b.imageData);
+      if (!entry || !entry.loaded) continue;
+      const mx = (from.x + to.x) / 2;
+      const my = (from.y + to.y) / 2;
+      const dist = Math.max(16, Math.hypot(to.x - from.x, to.y - from.y));
+      const angle = Math.atan2(to.y - from.y, to.x - from.x);
+      const thickness = Math.max(18, Number(b.width) || 26);
+      ctx.save();
+      ctx.translate(mx, my);
+      ctx.rotate(angle);
+      ctx.drawImage(entry.img, -dist / 2 - 6, -thickness / 2, dist + 12, thickness);
+      ctx.restore();
+    }
+
     ctx.restore();
   }
 
@@ -1449,6 +1471,7 @@
     hitTestHandles,
     hitTestObjects,
     getLocalBounds,
-    setOnImageLoaded
+    setOnImageLoaded,
+    drawCustomRig
   };
 })(window);
