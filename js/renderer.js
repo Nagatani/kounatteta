@@ -60,7 +60,7 @@
 
   // オブジェクトのローカル境界ボックスを取得
   function getLocalBounds(ctx, obj) {
-    if (obj.kind === 'furniture') {
+    if (obj.kind === 'furniture' || obj.kind === 'road' || obj.kind === 'signal') {
       return {
         minX: -obj.w / 2,
         maxX: obj.w / 2,
@@ -535,7 +535,350 @@
         ctx.stroke();
         break;
       }
+
+      case 'car': {
+        // 上向き（-y方向が前方）の白抜き枠線ピクトグラム普通車
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3.2;
+
+        // サイドミラー（左右）
+        roundedRectPath(ctx, x - 4, y + h * 0.24, 6, 8, 2);
+        ctx.fill();
+        ctx.stroke();
+        roundedRectPath(ctx, x + w - 2, y + h * 0.24, 6, 8, 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 車体本体
+        roundedRectPath(ctx, x, y, w, h, Math.min(12, w * 0.34));
+        ctx.fill();
+        ctx.stroke();
+
+        // フロントガラス（上側・進行方向が一目で分かる）
+        ctx.beginPath();
+        ctx.moveTo(x + w * 0.18, y + h * 0.22);
+        ctx.lineTo(x + w * 0.82, y + h * 0.22);
+        ctx.lineTo(x + w * 0.74, y + h * 0.42);
+        ctx.lineTo(x + w * 0.26, y + h * 0.42);
+        ctx.closePath();
+        ctx.fillStyle = hexToRgba(color, 0.22);
+        ctx.fill();
+        ctx.lineWidth = 2.2;
+        ctx.stroke();
+
+        // リアガラス（下側・細め）
+        roundedRectPath(ctx, x + w * 0.22, y + h * 0.72, w * 0.56, h * 0.12, 3);
+        ctx.fillStyle = hexToRgba(color, 0.14);
+        ctx.fill();
+        ctx.stroke();
+
+        // ヘッドライト（上端左右）
+        ctx.fillStyle = color;
+        roundedRectPath(ctx, x + w * 0.14, y + 3, w * 0.22, 4, 2);
+        ctx.fill();
+        roundedRectPath(ctx, x + w * 0.64, y + 3, w * 0.22, 4, 2);
+        ctx.fill();
+        break;
+      }
+
+      case 'truck': {
+        // 上向きの白抜き枠線トラック
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3.2;
+        // 荷台
+        roundedRectPath(ctx, x, y + h * 0.28, w, h * 0.72, 4);
+        ctx.fill();
+        ctx.stroke();
+        // キャビン（前部）
+        roundedRectPath(ctx, x + 2, y, w - 4, h * 0.28, 7);
+        ctx.fill();
+        ctx.stroke();
+        // フロントガラス
+        roundedRectPath(ctx, x + w * 0.16, y + h * 0.06, w * 0.68, h * 0.11, 3);
+        ctx.fillStyle = hexToRgba(color, 0.24);
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        break;
+      }
+
+      case 'bicycle': {
+        // 上向きの白抜き枠線自転車
+        ctx.strokeStyle = color;
+        ctx.fillStyle = '#ffffff';
+        ctx.lineCap = 'round';
+        // 前後タイヤ・フレーム
+        ctx.lineWidth = 4.5;
+        ctx.beginPath();
+        ctx.moveTo(0, y + 4);
+        ctx.lineTo(0, y + h - 4);
+        ctx.stroke();
+        // ハンドル（上側）
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(x + 2, y + h * 0.24);
+        ctx.lineTo(x + w - 2, y + h * 0.24);
+        ctx.stroke();
+        // サドル
+        ctx.beginPath();
+        ctx.ellipse(0, y + h * 0.56, 5.5, 7.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.lineWidth = 2.6;
+        ctx.stroke();
+        break;
+      }
+
+      case 'crosswalk': {
+        const count = Math.max(3, Math.round(w / 22));
+        const gap = w / count;
+        const stripeW = gap * 0.54;
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.2;
+        for (let i = 0; i < count; i++) {
+          const sx = x + i * gap + (gap - stripeW) / 2;
+          roundedRectPath(ctx, sx, y, stripeW, h, 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+        break;
+      }
     }
+    ctx.restore();
+  }
+
+  // --- 道路・交差点オブジェクトの描画 ---
+  function drawRoad(ctx, obj) {
+    const w = obj.w;
+    const h = obj.h;
+    const hw = w / 2;
+    const hh = h / 2;
+    const lanes = obj.lanes === 2 ? 2 : 1;
+    const laneW = lanes === 2 ? 50 : 68;
+    const roadHalf = laneW * lanes; // 片側幅（全体幅の半分）
+    const type = obj.roadType || 'cross';
+    const color = obj.color || '#64748b';
+    const roadFill = hexToRgba(color, 0.13);
+
+    ctx.save();
+
+    // 1. 道路面の塗り
+    ctx.fillStyle = roadFill;
+    if (type === 'cross') {
+      ctx.fillRect(-roadHalf, -hh, roadHalf * 2, h);
+      ctx.fillRect(-hw, -roadHalf, w, roadHalf * 2);
+    } else if (type === 't_junction') {
+      // 横道路＋下方向への縦道路
+      ctx.fillRect(-hw, -roadHalf, w, roadHalf * 2);
+      ctx.fillRect(-roadHalf, 0, roadHalf * 2, hh);
+    } else {
+      // 直線道路（縦）
+      ctx.fillRect(-roadHalf, -hh, roadHalf * 2, h);
+    }
+
+    // 2. 道路の縁（歩道境界線）
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    if (type === 'cross') {
+      // 4つの角のL字境界
+      ctx.moveTo(-hw, -roadHalf); ctx.lineTo(-roadHalf, -roadHalf); ctx.lineTo(-roadHalf, -hh);
+      ctx.moveTo(hw, -roadHalf); ctx.lineTo(roadHalf, -roadHalf); ctx.lineTo(roadHalf, -hh);
+      ctx.moveTo(-hw, roadHalf); ctx.lineTo(-roadHalf, roadHalf); ctx.lineTo(-roadHalf, hh);
+      ctx.moveTo(hw, roadHalf); ctx.lineTo(roadHalf, roadHalf); ctx.lineTo(roadHalf, hh);
+    } else if (type === 't_junction') {
+      ctx.moveTo(-hw, -roadHalf); ctx.lineTo(hw, -roadHalf);
+      ctx.moveTo(-hw, roadHalf); ctx.lineTo(-roadHalf, roadHalf); ctx.lineTo(-roadHalf, hh);
+      ctx.moveTo(hw, roadHalf); ctx.lineTo(roadHalf, roadHalf); ctx.lineTo(roadHalf, hh);
+    } else {
+      ctx.moveTo(-roadHalf, -hh); ctx.lineTo(-roadHalf, hh);
+      ctx.moveTo(roadHalf, -hh); ctx.lineTo(roadHalf, hh);
+    }
+    ctx.stroke();
+
+    const cwOffset = roadHalf + 8;
+    const cwDepth = 34;
+    const stopOffset = obj.crosswalk ? cwOffset + cwDepth + 12 : roadHalf + 18;
+
+    // 3. 中央線＆車線境界線
+    function drawCenterAndLanes(x1, y1, x2, y2, isVertical) {
+      // 中央線（オレンジ破線）
+      ctx.save();
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2.8;
+      ctx.setLineDash([12, 10]);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      // 片側2車線なら白の車線境界線を追加
+      if (lanes === 2) {
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.2;
+        ctx.setLineDash([10, 10]);
+        for (const sign of [-1, 1]) {
+          ctx.beginPath();
+          if (isVertical) {
+            ctx.moveTo(x1 + sign * laneW, y1);
+            ctx.lineTo(x2 + sign * laneW, y2);
+          } else {
+            ctx.moveTo(x1, y1 + sign * laneW);
+            ctx.lineTo(x2, y2 + sign * laneW);
+          }
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    if (type === 'cross') {
+      drawCenterAndLanes(0, -hh, 0, -stopOffset, true);
+      drawCenterAndLanes(0, stopOffset, 0, hh, true);
+      drawCenterAndLanes(-hw, 0, -stopOffset, 0, false);
+      drawCenterAndLanes(stopOffset, 0, hw, 0, false);
+    } else if (type === 't_junction') {
+      drawCenterAndLanes(-hw, 0, -stopOffset, 0, false);
+      drawCenterAndLanes(stopOffset, 0, hw, 0, false);
+      drawCenterAndLanes(0, stopOffset, 0, hh, true);
+    } else {
+      if (obj.crosswalk) {
+        drawCenterAndLanes(0, -hh, 0, -cwDepth / 2 - 14, true);
+        drawCenterAndLanes(0, cwDepth / 2 + 14, 0, hh, true);
+      } else {
+        drawCenterAndLanes(0, -hh, 0, hh, true);
+      }
+    }
+
+    // 4. 横断歩道
+    function drawZebra(cx, cy, length, depth, horizontal) {
+      const count = Math.max(4, Math.floor(length / 18));
+      const step = length / count;
+      const barW = step * 0.56;
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = hexToRgba(color, 0.35);
+      ctx.lineWidth = 1;
+      for (let i = 0; i < count; i++) {
+        const offset = -length / 2 + i * step + (step - barW) / 2;
+        if (horizontal) {
+          ctx.fillRect(cx + offset, cy - depth / 2, barW, depth);
+          ctx.strokeRect(cx + offset, cy - depth / 2, barW, depth);
+        } else {
+          ctx.fillRect(cx - depth / 2, cy + offset, depth, barW);
+          ctx.strokeRect(cx - depth / 2, cy + offset, depth, barW);
+        }
+      }
+    }
+
+    if (obj.crosswalk) {
+      const zebraLen = roadHalf * 2 - 14;
+      if (type === 'cross') {
+        drawZebra(0, -(cwOffset + cwDepth / 2), zebraLen, cwDepth, true);
+        drawZebra(0, cwOffset + cwDepth / 2, zebraLen, cwDepth, true);
+        drawZebra(-(cwOffset + cwDepth / 2), 0, zebraLen, cwDepth, false);
+        drawZebra(cwOffset + cwDepth / 2, 0, zebraLen, cwDepth, false);
+      } else if (type === 't_junction') {
+        drawZebra(0, cwOffset + cwDepth / 2, zebraLen, cwDepth, true);
+        drawZebra(-(cwOffset + cwDepth / 2), 0, zebraLen, cwDepth, false);
+        drawZebra(cwOffset + cwDepth / 2, 0, zebraLen, cwDepth, false);
+      } else {
+        drawZebra(0, 0, zebraLen, cwDepth, true);
+      }
+    }
+
+    // 5. 停止線（日本の左側通行に合わせて各進入車線の手前に描画）
+    if (obj.stopLine) {
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'butt';
+      ctx.beginPath();
+      if (type === 'cross') {
+        // 下から上（左車線: -roadHalf..0）
+        ctx.moveTo(-roadHalf + 4, stopOffset); ctx.lineTo(-3, stopOffset);
+        // 上から下（右車線: 0..roadHalf）
+        ctx.moveTo(3, -stopOffset); ctx.lineTo(roadHalf - 4, -stopOffset);
+        // 左から右（下車線: 0..roadHalf）
+        ctx.moveTo(-stopOffset, 3); ctx.lineTo(-stopOffset, roadHalf - 4);
+        // 右から左（上車線: -roadHalf..0）
+        ctx.moveTo(stopOffset, -roadHalf + 4); ctx.lineTo(stopOffset, -3);
+      } else if (type === 't_junction') {
+        ctx.moveTo(-roadHalf + 4, stopOffset); ctx.lineTo(-3, stopOffset);
+        ctx.moveTo(-stopOffset, 3); ctx.lineTo(-stopOffset, roadHalf - 4);
+        ctx.moveTo(stopOffset, -roadHalf + 4); ctx.lineTo(stopOffset, -3);
+      } else if (obj.crosswalk) {
+        ctx.moveTo(-roadHalf + 4, cwDepth / 2 + 14); ctx.lineTo(-3, cwDepth / 2 + 14);
+        ctx.moveTo(3, -(cwDepth / 2 + 14)); ctx.lineTo(roadHalf - 4, -(cwDepth / 2 + 14));
+      }
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  // --- 白抜きピクトグラム信号機の描画 ---
+  function drawSignal(ctx, obj) {
+    const w = obj.w;
+    const h = obj.h;
+    const x = -w / 2;
+    const y = -h / 2;
+    const color = obj.color || '#1e293b';
+    const sigState = obj.state || 'green';
+
+    ctx.save();
+    // 外枠（白抜き角丸カプセル）
+    roundedRectPath(ctx, x, y, w, h, h / 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // 左から 青・黄・赤（日本の信号機配列）
+    const r = Math.min(h * 0.31, w * 0.12);
+    const lamps = [
+      { id: 'green', cx: -w * 0.28, active: '#16a34a' },
+      { id: 'yellow', cx: 0, active: '#eab308' },
+      { id: 'red', cx: w * 0.28, active: '#ef4444' }
+    ];
+
+    for (const lamp of lamps) {
+      const isOn =
+        sigState === lamp.id || (sigState === 'red_right' && lamp.id === 'red');
+      ctx.beginPath();
+      ctx.arc(lamp.cx, 0, r, 0, Math.PI * 2);
+      ctx.fillStyle = isOn ? lamp.active : '#e2e8f0';
+      ctx.fill();
+      ctx.strokeStyle = isOn ? lamp.active : '#cbd5e1';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // 右折矢印灯（red_right のとき下に小丸で表示）
+    if (sigState === 'red_right') {
+      const ay = h / 2 + r + 4;
+      ctx.beginPath();
+      ctx.arc(w * 0.28, ay, r + 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.4;
+      ctx.stroke();
+      // 右矢印
+      ctx.strokeStyle = '#16a34a';
+      ctx.lineWidth = 2.4;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(w * 0.28 - 4, ay);
+      ctx.lineTo(w * 0.28 + 4, ay);
+      ctx.moveTo(w * 0.28 + 1, ay - 3);
+      ctx.lineTo(w * 0.28 + 4, ay);
+      ctx.lineTo(w * 0.28 + 1, ay + 3);
+      ctx.stroke();
+    }
+
     ctx.restore();
   }
 
@@ -734,7 +1077,7 @@
       const b = getLocalBounds(ctx, obj);
       const rotPt = localToWorld(obj, 0, b.minY - 26);
       handles.push({ type: 'rotate', key: 'rotate', x: rotPt.x, y: rotPt.y });
-    } else if (obj.kind === 'furniture') {
+    } else if (obj.kind === 'furniture' || obj.kind === 'road' || obj.kind === 'signal') {
       const hw = obj.w / 2;
       const hh = obj.h / 2;
       const corners = [
@@ -794,9 +1137,9 @@
       ctx.strokeRect(b.minX, b.minY, b.maxX - b.minX, b.maxY - b.minY);
       ctx.setLineDash([]);
 
-      if (obj.kind === 'rig' || obj.kind === 'furniture' || obj.kind === 'stamp') {
-        const topY = obj.kind === 'furniture' ? -obj.h / 2 : b.minY;
-        const rotOffset = obj.kind === 'furniture' ? 28 : 26;
+      if (obj.kind === 'rig' || obj.kind === 'furniture' || obj.kind === 'road' || obj.kind === 'signal' || obj.kind === 'stamp') {
+        const topY = (obj.kind === 'furniture' || obj.kind === 'road' || obj.kind === 'signal') ? -obj.h / 2 : b.minY;
+        const rotOffset = (obj.kind === 'furniture' || obj.kind === 'road' || obj.kind === 'signal') ? 28 : 26;
         ctx.beginPath();
         ctx.moveTo(0, topY);
         ctx.lineTo(0, topY - rotOffset);
@@ -867,6 +1210,10 @@
         if (obj.rigType === 'human') drawHuman(ctx, obj);
         else if (obj.rigType === 'cat') drawCat(ctx, obj);
         else if (obj.rigType === 'dog') drawDog(ctx, obj);
+      } else if (obj.kind === 'road') {
+        drawRoad(ctx, obj);
+      } else if (obj.kind === 'signal') {
+        drawSignal(ctx, obj);
       } else if (obj.kind === 'furniture') {
         drawFurniture(ctx, obj);
       } else if (obj.kind === 'stamp') {
@@ -909,6 +1256,19 @@
       const obj = objects[i];
       const lp = worldToLocal(obj, wx, wy);
       const b = getLocalBounds(ctx, obj);
+
+      // 道路オブジェクトは実際の道路面上のみヒット判定（四隅の余白タップで選択解除できるようにする）
+      if (obj.kind === 'road') {
+        if (lp.x < b.minX || lp.x > b.maxX || lp.y < b.minY || lp.y > b.maxY) continue;
+        const lanes = obj.lanes === 2 ? 2 : 1;
+        const roadHalf = (lanes === 2 ? 50 : 68) * lanes;
+        const type = obj.roadType || 'cross';
+        const onVertical = Math.abs(lp.x) <= roadHalf && (type !== 't_junction' || lp.y >= 0);
+        const onHorizontal = type !== 'straight' && Math.abs(lp.y) <= roadHalf;
+        if (onVertical || onHorizontal) return obj;
+        continue;
+      }
+
       const pad = 10;
       if (
         lp.x >= b.minX - pad &&

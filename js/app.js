@@ -8,7 +8,8 @@
   const NS = global.SituDiagram;
   const Renderer = NS.Renderer;
 
-  const STORAGE_KEY = 'situ-diagram-state-v3';
+  const APP_VERSION = '1.0.0';
+  const STORAGE_KEY = 'situ-diagram-state-v4';
   const RATIOS = [
     { id: '1:1', label: '1:1', width: 600, height: 600 },
     { id: '4:3', label: '4:3', width: 600, height: 450 },
@@ -43,6 +44,8 @@
   const barDefault = document.getElementById('bar-default');
   const barSelected = document.getElementById('bar-selected');
   const btnSelPose = document.getElementById('btn-sel-pose');
+  const btnSelConfig = document.getElementById('btn-sel-config');
+  const btnSelConfigLabel = document.getElementById('btn-sel-config-label');
   const btnSelEditText = document.getElementById('btn-sel-edit-text');
   const btnSelColor = document.getElementById('btn-sel-color');
   const selColorDot = document.getElementById('sel-color-dot');
@@ -51,6 +54,9 @@
   const templateGrid = document.getElementById('template-grid');
   const dialogPose = document.getElementById('dialog-pose');
   const posePresetGrid = document.getElementById('pose-preset-grid');
+  const dialogConfig = document.getElementById('dialog-config');
+  const dialogConfigTitle = document.getElementById('dialog-config-title');
+  const configSheetBody = document.getElementById('config-sheet-body');
   const dialogColor = document.getElementById('dialog-color');
   const colorGrid = document.getElementById('color-grid');
   const dialogText = document.getElementById('dialog-text');
@@ -65,6 +71,24 @@
   const btnSharePng = document.getElementById('btn-share-png');
   const btnCopyPng = document.getElementById('btn-copy-png');
   const dialogClear = document.getElementById('dialog-clear');
+
+  // アプリ管理・PWAメニュー関連
+  const btnAppMenu = document.getElementById('btn-app-menu');
+  const updateDot = document.getElementById('update-dot');
+  const dialogAppMenu = document.getElementById('dialog-app-menu');
+  const appInfoVersion = document.getElementById('app-info-version');
+  const appInfoMode = document.getElementById('app-info-mode');
+  const appInfoSw = document.getElementById('app-info-sw');
+  const btnPwaInstall = document.getElementById('btn-pwa-install');
+  const btnPwaApplyUpdate = document.getElementById('btn-pwa-apply-update');
+  const btnPwaCheckUpdate = document.getElementById('btn-pwa-check-update');
+  const btnClearCache = document.getElementById('btn-clear-cache');
+  const btnResetStorage = document.getElementById('btn-reset-storage');
+  const pwaInstallHint = document.getElementById('pwa-install-hint');
+
+  let swRegistration = null;
+  let deferredInstallPrompt = null;
+  let isReloadingForUpdate = false;
 
   let displayScale = 1;
   let toastTimer = null;
@@ -217,6 +241,15 @@
     barSelected.hidden = false;
     btnSelPose.hidden = sel.kind !== 'rig';
     btnSelEditText.hidden = sel.kind !== 'text';
+    if (sel.kind === 'road') {
+      btnSelConfig.hidden = false;
+      btnSelConfigLabel.textContent = '道路設定';
+    } else if (sel.kind === 'signal') {
+      btnSelConfig.hidden = false;
+      btnSelConfigLabel.textContent = '信号色';
+    } else {
+      btnSelConfig.hidden = true;
+    }
     selColorDot.style.setProperty('--dot-color', sel.color || '#1e293b');
   }
 
@@ -345,11 +378,18 @@
       btn.className = 'template-card';
       btn.innerHTML = `<span class="template-icon" aria-hidden="true">${tpl.iconSvg}</span><span class="template-label">${tpl.label}</span>`;
       btn.addEventListener('click', () => {
-        const cx = state.width / 2 + (Math.random() * 40 - 20);
-        const cy = state.height / 2 + (Math.random() * 40 - 20);
+        const isRoad = tpl.id.startsWith('road_');
+        const cx = isRoad ? state.width / 2 : state.width / 2 + (Math.random() * 40 - 20);
+        const cy = isRoad ? state.height / 2 : state.height / 2 + (Math.random() * 40 - 20);
         const newObj = tpl.create(cx, cy);
         newObj.id = uid();
-        state.objects.push(newObj);
+        if (newObj.kind === 'road') {
+          newObj.w = state.width;
+          newObj.h = state.height;
+          state.objects.unshift(newObj);
+        } else {
+          state.objects.push(newObj);
+        }
         state.selectedId = newObj.id;
         dialogAdd.close();
         updateUI();
@@ -357,6 +397,10 @@
         commitHistory();
         if (newObj.kind === 'rig') {
           showToast('青い丸をドラッグして手足や頭を動かせます');
+        } else if (newObj.kind === 'road') {
+          showToast('下部の「道路設定」で形状・車線・横断歩道を切替できます');
+        } else if (newObj.kind === 'signal') {
+          showToast('下部の「信号色」で青・黄・赤・右折矢印を切替できます');
         } else if (newObj.kind === 'furniture') {
           showToast('角の丸でサイズ変更、緑の丸で回転できます');
         } else if (newObj.kind === 'text') {
@@ -410,6 +454,97 @@
     }
 
     dialogPose.showModal();
+  });
+
+  // --- 道路・信号設定シート ---
+  function renderConfigSheet(sel) {
+    configSheetBody.innerHTML = '';
+
+    function addSection(title, options, currentVal, onSelect) {
+      const sec = document.createElement('div');
+      sec.className = 'sheet-section';
+      const h3 = document.createElement('h3');
+      h3.textContent = title;
+      const grid = document.createElement('div');
+      grid.className = 'chip-grid';
+      for (const opt of options) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip-btn' + (currentVal === opt.value ? ' active' : '');
+        btn.textContent = opt.label;
+        btn.addEventListener('click', () => {
+          onSelect(opt.value);
+          render();
+          commitHistory();
+          renderConfigSheet(sel);
+        });
+        grid.appendChild(btn);
+      }
+      sec.appendChild(h3);
+      sec.appendChild(grid);
+      configSheetBody.appendChild(sec);
+    }
+
+    if (sel.kind === 'road') {
+      dialogConfigTitle.textContent = '道路・交差点の設定';
+      addSection(
+        '道路の形',
+        [
+          { value: 'cross', label: '十字路' },
+          { value: 't_junction', label: 'T字路' },
+          { value: 'straight', label: '直線道路' }
+        ],
+        sel.roadType || 'cross',
+        (v) => { sel.roadType = v; }
+      );
+      addSection(
+        '車線数',
+        [
+          { value: 1, label: '片側1車線' },
+          { value: 2, label: '片側2車線' }
+        ],
+        sel.lanes === 2 ? 2 : 1,
+        (v) => { sel.lanes = v; }
+      );
+      addSection(
+        '横断歩道',
+        [
+          { value: true, label: 'あり' },
+          { value: false, label: 'なし' }
+        ],
+        Boolean(sel.crosswalk),
+        (v) => { sel.crosswalk = v; }
+      );
+      addSection(
+        '停止線',
+        [
+          { value: true, label: 'あり' },
+          { value: false, label: 'なし' }
+        ],
+        Boolean(sel.stopLine),
+        (v) => { sel.stopLine = v; }
+      );
+    } else if (sel.kind === 'signal') {
+      dialogConfigTitle.textContent = '信号機の状態';
+      addSection(
+        '点灯ランプ',
+        [
+          { value: 'green', label: '青' },
+          { value: 'yellow', label: '黄' },
+          { value: 'red', label: '赤' },
+          { value: 'red_right', label: '赤＋右折矢印' }
+        ],
+        sel.state || 'green',
+        (v) => { sel.state = v; }
+      );
+    }
+  }
+
+  btnSelConfig.addEventListener('click', () => {
+    const sel = getSelected();
+    if (!sel || (sel.kind !== 'road' && sel.kind !== 'signal')) return;
+    renderConfigSheet(sel);
+    dialogConfig.showModal();
   });
 
   // --- 色選択シート ---
@@ -680,22 +815,177 @@
     }
   }
 
+  // --- PWA管理・更新・キャッシュクリア ---
+  function isStandaloneMode() {
+    return (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true
+    );
+  }
+
+  function refreshAppMenuStatus() {
+    appInfoVersion.textContent = 'v' + APP_VERSION;
+    const standalone = isStandaloneMode();
+    appInfoMode.textContent = standalone ? 'PWA（アプリ起動）' : 'ブラウザ表示';
+    pwaInstallHint.hidden = standalone || Boolean(deferredInstallPrompt);
+    btnPwaInstall.hidden = !deferredInstallPrompt;
+
+    const hasWaiting = Boolean(swRegistration && swRegistration.waiting);
+    updateDot.hidden = !hasWaiting;
+    btnPwaApplyUpdate.hidden = !hasWaiting;
+
+    if (!('serviceWorker' in navigator)) {
+      appInfoSw.textContent = '未対応ブラウザ';
+    } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+      appInfoSw.textContent = 'ローカルファイル起動';
+    } else if (hasWaiting) {
+      appInfoSw.textContent = '新しいバージョンあり';
+    } else if (swRegistration && swRegistration.active) {
+      appInfoSw.textContent = '有効（最新）';
+    } else {
+      appInfoSw.textContent = '準備中';
+    }
+  }
+
+  function applySwUpdate() {
+    if (!swRegistration || !swRegistration.waiting) return;
+    swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    showToast('最新バージョンを適用しています...');
+  }
+
+  function setupPwa() {
+    // Android Chrome等のインストールプロンプトを保持
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      refreshAppMenuStatus();
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      refreshAppMenuStatus();
+      showToast('ホーム画面に追加されました');
+    });
+
+    if (!('serviceWorker' in navigator)) return;
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
+
+    // 新しい Service Worker が有効になったら自動で再読み込み
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (isReloadingForUpdate) return;
+      isReloadingForUpdate = true;
+      window.location.reload();
+    });
+
+    navigator.serviceWorker
+      .register('./sw.js')
+      .then((reg) => {
+        swRegistration = reg;
+        refreshAppMenuStatus();
+
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              refreshAppMenuStatus();
+              showToast('新しいバージョンがあります（タイトルをタップして更新）');
+            }
+          });
+        });
+      })
+      .catch(() => {
+        refreshAppMenuStatus();
+      });
+  }
+
+  btnAppMenu.addEventListener('click', () => {
+    refreshAppMenuStatus();
+    dialogAppMenu.showModal();
+  });
+
+  btnPwaInstall.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    refreshAppMenuStatus();
+  });
+
+  btnPwaApplyUpdate.addEventListener('click', () => {
+    dialogAppMenu.close();
+    applySwUpdate();
+  });
+
+  btnPwaCheckUpdate.addEventListener('click', async () => {
+    if (!swRegistration) {
+      showToast('Service Worker が有効な環境（HTTPS / localhost）で利用できます');
+      return;
+    }
+    try {
+      await swRegistration.update();
+      refreshAppMenuStatus();
+      if (swRegistration.waiting) {
+        showToast('新しいバージョンが見つかりました');
+      } else {
+        showToast('すでに最新バージョンです');
+      }
+    } catch (_) {
+      showToast('更新の確認に失敗しました（オフラインの可能性があります）');
+    }
+  });
+
+  btnClearCache.addEventListener('click', async () => {
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+    } catch (_) {
+      // 無視してリロード続行
+    }
+    dialogAppMenu.close();
+    window.location.reload();
+  });
+
+  btnResetStorage.addEventListener('click', () => {
+    try {
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith('situ-diagram-state-')) {
+          localStorage.removeItem(key);
+        }
+      }
+    } catch (_) {
+      // 無視
+    }
+    state.objects = NS.SAMPLES[0].build();
+    state.selectedId = null;
+    state.ratioIndex = 0;
+    state.width = RATIOS[0].width;
+    state.height = RATIOS[0].height;
+    dialogAppMenu.close();
+    updateUI();
+    resizeCanvas();
+    commitHistory();
+    showToast('自動保存データを初期化しました');
+  });
+
   // --- 初期化 ---
   function init() {
     const loaded = loadFromStorage();
     if (!loaded) {
-      // 初回は「ベッドを飼い猫に占領された夜」サンプルを表示
+      // 初回は「信号ありの交差点」サンプルを表示
       state.objects = NS.SAMPLES[0].build();
     }
     updateUI();
     resizeCanvas();
     commitHistory();
-    showToast('タップして選択・ドラッグで移動や関節調整ができます');
-
-    // HTTP(S)環境ならPWA用Service Workerを登録
-    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
-    }
+    showToast('タップして選択・ドラッグで移動や設定ができます');
+    setupPwa();
   }
 
   window.addEventListener('resize', resizeCanvas);

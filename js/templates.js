@@ -45,7 +45,15 @@
     sweat: '<svg viewBox="0 0 36 36"><path d="M18 6 C18 6 27 17 27 23 A9 9 0 1 1 9 23 C9 17 18 6 18 6Z" fill="#fff" stroke="currentColor" stroke-width="2.4"/></svg>',
     bang: '<svg viewBox="0 0 36 36"><polygon points="18,4 21,12 30,9 25,17 32,22 23,23 25,32 18,26 11,32 13,23 4,22 11,17 6,9 15,12" fill="#fff" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>',
     excl: '<svg viewBox="0 0 36 36"><rect x="15.5" y="6" width="5" height="16" rx="2.5" fill="#fff" stroke="currentColor" stroke-width="2.2"/><circle cx="18" cy="27.5" r="3" fill="#fff" stroke="currentColor" stroke-width="2.2"/></svg>',
-    paw: '<svg viewBox="0 0 36 36"><circle cx="11" cy="14" r="2.8" fill="#fff" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="10.5" r="2.8" fill="#fff" stroke="currentColor" stroke-width="2"/><circle cx="25" cy="14" r="2.8" fill="#fff" stroke="currentColor" stroke-width="2"/><path d="M18 17 c-5 0 -8 4 -7 8 c1 3 4 3 7 2 c3 1 6 1 7-2 c1-4 -2-8 -7-8Z" fill="#fff" stroke="currentColor" stroke-width="2"/></svg>'
+    paw: '<svg viewBox="0 0 36 36"><circle cx="11" cy="14" r="2.8" fill="#fff" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="10.5" r="2.8" fill="#fff" stroke="currentColor" stroke-width="2"/><circle cx="25" cy="14" r="2.8" fill="#fff" stroke="currentColor" stroke-width="2"/><path d="M18 17 c-5 0 -8 4 -7 8 c1 3 4 3 7 2 c3 1 6 1 7-2 c1-4 -2-8 -7-8Z" fill="#fff" stroke="currentColor" stroke-width="2"/></svg>',
+    road_cross: '<svg viewBox="0 0 36 36"><path d="M12 3v9H3v12h9v9h12v-9h9V12h-9V3Z" fill="#fff" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M18 5v6M18 25v6M5 18h6M25 18h6" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2.5 2"/></svg>',
+    road_t: '<svg viewBox="0 0 36 36"><path d="M3 12h30v12H24v9H12v-9H3Z" fill="#fff" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M6 18h24M18 24v7" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2.5 2"/></svg>',
+    road_straight: '<svg viewBox="0 0 36 36"><rect x="10" y="3" width="16" height="30" rx="2" fill="#fff" stroke="currentColor" stroke-width="2.2"/><line x1="18" y1="6" x2="18" y2="30" stroke="currentColor" stroke-width="2" stroke-dasharray="3.5 3"/></svg>',
+    signal: '<svg viewBox="0 0 36 36"><rect x="4" y="11" width="28" height="14" rx="7" fill="#fff" stroke="currentColor" stroke-width="2.2"/><circle cx="11" cy="18" r="3" fill="#22c55e"/><circle cx="18" cy="18" r="3" fill="#eab308" opacity="0.35"/><circle cx="25" cy="18" r="3" fill="#ef4444" opacity="0.35"/></svg>',
+    car: '<svg viewBox="0 0 36 36"><rect x="10" y="4" width="16" height="28" rx="5" fill="#fff" stroke="currentColor" stroke-width="2.2"/><rect x="13" y="10" width="10" height="6" rx="1.8" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="1.6"/><line x1="13" y1="24" x2="23" y2="24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    truck: '<svg viewBox="0 0 36 36"><rect x="9" y="3" width="18" height="9" rx="3" fill="#fff" stroke="currentColor" stroke-width="2.2"/><rect x="8.5" y="12" width="19" height="21" rx="2" fill="#fff" stroke="currentColor" stroke-width="2.2"/></svg>',
+    bicycle: '<svg viewBox="0 0 36 36"><line x1="18" y1="5" x2="18" y2="31" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="10" y1="11" x2="26" y2="11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="18" cy="19" r="3.2" fill="#fff" stroke="currentColor" stroke-width="2"/></svg>',
+    crosswalk: '<svg viewBox="0 0 36 36"><rect x="5" y="12" width="4" height="12" rx="1" fill="#fff" stroke="currentColor" stroke-width="1.8"/><rect x="12.5" y="12" width="4" height="12" rx="1" fill="#fff" stroke="currentColor" stroke-width="1.8"/><rect x="20" y="12" width="4" height="12" rx="1" fill="#fff" stroke="currentColor" stroke-width="1.8"/><rect x="27.5" y="12" width="4" height="12" rx="1" fill="#fff" stroke="currentColor" stroke-width="1.8"/></svg>'
   };
 
   // ピクトグラム人間のポーズプリセット（現実的なスケール：身長約260px）
@@ -322,6 +330,145 @@
       })
     },
 
+    // --- 交通・道路 ---
+    {
+      id: 'car',
+      category: 'traffic',
+      label: '車（普通車）',
+      iconSvg: ICONS.car,
+      create: (x, y) => ({
+        kind: 'furniture',
+        furnitureType: 'car',
+        x, y,
+        w: 38,
+        h: 72,
+        rotation: 0,
+        flipX: false,
+        color: '#2563eb'
+      })
+    },
+    {
+      id: 'truck',
+      category: 'traffic',
+      label: 'トラック',
+      iconSvg: ICONS.truck,
+      create: (x, y) => ({
+        kind: 'furniture',
+        furnitureType: 'truck',
+        x, y,
+        w: 44,
+        h: 102,
+        rotation: 0,
+        flipX: false,
+        color: '#475569'
+      })
+    },
+    {
+      id: 'bicycle',
+      category: 'traffic',
+      label: '自転車',
+      iconSvg: ICONS.bicycle,
+      create: (x, y) => ({
+        kind: 'furniture',
+        furnitureType: 'bicycle',
+        x, y,
+        w: 24,
+        h: 48,
+        rotation: 0,
+        flipX: false,
+        color: '#16a34a'
+      })
+    },
+    {
+      id: 'signal',
+      category: 'traffic',
+      label: '信号機',
+      iconSvg: ICONS.signal,
+      create: (x, y) => ({
+        kind: 'signal',
+        x, y,
+        w: 66,
+        h: 26,
+        rotation: 0,
+        flipX: false,
+        color: '#1e293b',
+        state: 'green'
+      })
+    },
+    {
+      id: 'road_cross',
+      category: 'traffic',
+      label: '交差点(十字)',
+      iconSvg: ICONS.road_cross,
+      create: (x, y) => ({
+        kind: 'road',
+        roadType: 'cross',
+        x, y,
+        w: 600,
+        h: 600,
+        rotation: 0,
+        flipX: false,
+        color: '#64748b',
+        lanes: 1,
+        crosswalk: true,
+        stopLine: true
+      })
+    },
+    {
+      id: 'road_t',
+      category: 'traffic',
+      label: 'T字路',
+      iconSvg: ICONS.road_t,
+      create: (x, y) => ({
+        kind: 'road',
+        roadType: 't_junction',
+        x, y,
+        w: 600,
+        h: 600,
+        rotation: 0,
+        flipX: false,
+        color: '#64748b',
+        lanes: 1,
+        crosswalk: true,
+        stopLine: true
+      })
+    },
+    {
+      id: 'road_straight',
+      category: 'traffic',
+      label: '直線道路',
+      iconSvg: ICONS.road_straight,
+      create: (x, y) => ({
+        kind: 'road',
+        roadType: 'straight',
+        x, y,
+        w: 600,
+        h: 600,
+        rotation: 0,
+        flipX: false,
+        color: '#64748b',
+        lanes: 1,
+        crosswalk: false,
+        stopLine: false
+      })
+    },
+    {
+      id: 'crosswalk',
+      category: 'traffic',
+      label: '横断歩道',
+      iconSvg: ICONS.crosswalk,
+      create: (x, y) => ({
+        kind: 'furniture',
+        furnitureType: 'crosswalk',
+        x, y,
+        w: 110,
+        h: 34,
+        rotation: 0,
+        flipX: false,
+        color: '#64748b'
+      })
+    },
+
     // --- 家具・モノ ---
     {
       id: 'bed_top',
@@ -590,6 +737,165 @@
 
   // 作例（プリセットシーン）
   NS.SAMPLES = [
+    {
+      id: 'traffic-intersection',
+      iconSvg: ICONS.road_cross,
+      title: '信号ありの交差点（交通状況）',
+      desc: '自分の車＋他の車3台＋信号機つきの十字路',
+      ratio: '1:1',
+      build: () => [
+        {
+          id: 't_road',
+          kind: 'road',
+          roadType: 'cross',
+          x: 300,
+          y: 300,
+          w: 600,
+          h: 600,
+          rotation: 0,
+          flipX: false,
+          color: '#64748b',
+          lanes: 1,
+          crosswalk: true,
+          stopLine: true
+        },
+        {
+          id: 't_sig_v',
+          kind: 'signal',
+          x: 194,
+          y: 196,
+          w: 66,
+          h: 26,
+          rotation: 0,
+          flipX: false,
+          color: '#1e293b',
+          state: 'green'
+        },
+        {
+          id: 't_sig_h',
+          kind: 'signal',
+          x: 406,
+          y: 404,
+          w: 66,
+          h: 26,
+          rotation: Math.PI / 2,
+          flipX: false,
+          color: '#1e293b',
+          state: 'red'
+        },
+        {
+          id: 't_car_me',
+          kind: 'furniture',
+          furnitureType: 'car',
+          x: 266,
+          y: 454,
+          w: 38,
+          h: 72,
+          rotation: 0,
+          flipX: false,
+          color: '#2563eb'
+        },
+        {
+          id: 't_car_opp',
+          kind: 'furniture',
+          furnitureType: 'car',
+          x: 326,
+          y: 274,
+          w: 38,
+          h: 72,
+          rotation: 2.6,
+          flipX: false,
+          color: '#ef4444'
+        },
+        {
+          id: 't_car_other1',
+          kind: 'furniture',
+          furnitureType: 'car',
+          x: 334,
+          y: 122,
+          w: 38,
+          h: 72,
+          rotation: Math.PI,
+          flipX: false,
+          color: '#475569'
+        },
+        {
+          id: 't_car_other2',
+          kind: 'furniture',
+          furnitureType: 'car',
+          x: 140,
+          y: 334,
+          w: 38,
+          h: 72,
+          rotation: Math.PI / 2,
+          flipX: false,
+          color: '#475569'
+        },
+        {
+          id: 't_car_other3',
+          kind: 'furniture',
+          furnitureType: 'car',
+          x: 460,
+          y: 266,
+          w: 38,
+          h: 72,
+          rotation: -Math.PI / 2,
+          flipX: false,
+          color: '#64748b'
+        },
+        {
+          id: 't_arrow_me',
+          kind: 'arrow',
+          x: 266,
+          y: 368,
+          color: '#2563eb',
+          start: { x: 0, y: 42 },
+          ctrl: { x: 0, y: 0 },
+          end: { x: 0, y: -42 }
+        },
+        {
+          id: 't_arrow_opp',
+          kind: 'arrow',
+          x: 280,
+          y: 310,
+          color: '#ef4444',
+          start: { x: 30, y: -12 },
+          ctrl: { x: 2, y: 18 },
+          end: { x: -46, y: 20 }
+        },
+        {
+          id: 't_lbl_me',
+          kind: 'text',
+          textType: 'label',
+          x: 184,
+          y: 454,
+          text: '自分の車',
+          fontSize: 17,
+          color: '#2563eb'
+        },
+        {
+          id: 't_bubble_opp',
+          kind: 'text',
+          textType: 'bubble',
+          x: 482,
+          y: 150,
+          text: '対向車が\n急に右折！',
+          fontSize: 16,
+          color: '#ef4444',
+          tail: { x: -72, y: 74 }
+        },
+        {
+          id: 't_title',
+          kind: 'text',
+          textType: 'label',
+          x: 112,
+          y: 46,
+          text: '交差点の状況',
+          fontSize: 20,
+          color: '#0f172a'
+        }
+      ]
+    },
     {
       id: 'bed-cat',
       iconSvg: ICONS.bed_top,

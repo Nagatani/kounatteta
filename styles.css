@@ -109,6 +109,33 @@
     white-space: nowrap;
   }
 
+  .title-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 6px;
+    margin-inline-start: -6px;
+    border-radius: var(--radius-sm);
+    transition: background-color 0.15s ease;
+  }
+
+  .title-btn:hover {
+    background-color: var(--bg-subtle);
+  }
+
+  .update-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .update-dot[hidden] {
+    display: none;
+  }
+
   .icon-btn {
     display: inline-flex;
     align-items: center;
@@ -481,8 +508,8 @@
   /* カテゴリタブ */
   .category-tabs {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
     background: var(--bg-subtle);
     padding: 4px;
     border-radius: var(--radius-sm);
@@ -490,11 +517,19 @@
 
   .tab-btn {
     height: 36px;
+    padding-inline: 2px;
     border-radius: 7px;
-    font-size: 0.8rem;
+    font-size: 0.74rem;
     font-weight: 700;
     color: var(--text-muted);
+    white-space: nowrap;
     transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .config-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
   }
 
   .tab-btn.active {
@@ -718,6 +753,55 @@
 
   .full-width {
     width: 100%;
+  }
+
+  .danger-text {
+    color: var(--danger);
+  }
+
+  .danger-text:hover:not(:disabled) {
+    background-color: var(--danger-soft);
+  }
+
+  /* アプリ管理メニュー */
+  .app-info-list {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--bg-subtle);
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+  }
+
+  .app-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .app-info-row dt {
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .app-info-row dd {
+    margin: 0;
+    font-weight: 700;
+    color: var(--text-main);
+  }
+
+  .pwa-hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .pwa-hint[hidden] {
+    display: none;
   }
 }
 

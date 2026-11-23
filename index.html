@@ -19,7 +19,12 @@
     <!-- 上部ツールバー（シンプル1行） -->
     <header class="top-bar">
       <div class="top-bar-group">
-        <h1 class="app-title">こうなってた</h1>
+        <h1 class="app-title">
+          <button type="button" id="btn-app-menu" class="title-btn" aria-label="アプリ管理・更新メニューを開く">
+            <span>こうなってた</span>
+            <span class="update-dot" id="update-dot" hidden aria-hidden="true"></span>
+          </button>
+        </h1>
         <button type="button" class="icon-btn" id="btn-undo" aria-label="元に戻す" disabled>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
         </button>
@@ -72,6 +77,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2.5"/><path d="M12 8v6M8 11l4-2 4 2M9 21l3-7 3 7"/></svg>
           <span>ポーズ</span>
         </button>
+        <button type="button" class="tool-btn accent" id="btn-sel-config" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="4"/></svg>
+          <span id="btn-sel-config-label">設定</span>
+        </button>
         <button type="button" class="tool-btn accent" id="btn-sel-edit-text" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
           <span>文字編集</span>
@@ -114,8 +123,9 @@
     </div>
     <div class="category-tabs" role="tablist" aria-label="カテゴリ">
       <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-cat="character">ひと・ペット</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-cat="traffic">交通・道路</button>
       <button type="button" class="tab-btn" role="tab" aria-selected="false" data-cat="furniture">家具・モノ</button>
-      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-cat="annotation">文字・矢印・記号</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-cat="annotation">文字・矢印</button>
     </div>
     <div class="template-grid" id="template-grid"></div>
   </dialog>
@@ -132,6 +142,17 @@
       <h3>プリセット（あとから関節をドラッグ調整できます）</h3>
       <div class="chip-grid" id="pose-preset-grid"></div>
     </div>
+  </dialog>
+
+  <!-- 道路・信号設定シート -->
+  <dialog class="sheet-dialog" id="dialog-config" closedby="any" aria-labelledby="dialog-config-title">
+    <div class="sheet-header">
+      <h2 id="dialog-config-title">道路・交差点の設定</h2>
+      <form method="dialog">
+        <button type="submit" class="close-btn" aria-label="閉じる">✕</button>
+      </form>
+    </div>
+    <div id="config-sheet-body" class="config-body"></div>
   </dialog>
 
   <!-- 色選択シート -->
@@ -207,6 +228,41 @@
       <button type="submit" value="cancel" class="secondary-btn" autofocus>キャンセル</button>
       <button type="submit" value="clear" class="danger-btn">すべて消去</button>
     </form>
+  </dialog>
+
+  <!-- アプリ管理・PWAメニュー（タイトルタップで開く隠しメニュー） -->
+  <dialog class="sheet-dialog" id="dialog-app-menu" closedby="any" aria-labelledby="dialog-app-menu-title">
+    <div class="sheet-header">
+      <h2 id="dialog-app-menu-title">アプリ管理（PWA・キャッシュ）</h2>
+      <form method="dialog">
+        <button type="submit" class="close-btn" aria-label="閉じる">✕</button>
+      </form>
+    </div>
+
+    <dl class="app-info-list">
+      <div class="app-info-row">
+        <dt>バージョン</dt>
+        <dd id="app-info-version">v1.0.0</dd>
+      </div>
+      <div class="app-info-row">
+        <dt>動作モード</dt>
+        <dd id="app-info-mode">ブラウザ</dd>
+      </div>
+      <div class="app-info-row">
+        <dt>更新・オフライン</dt>
+        <dd id="app-info-sw">確認中...</dd>
+      </div>
+    </dl>
+
+    <div class="export-actions">
+      <button type="button" class="primary-btn full-width" id="btn-pwa-install" hidden>ホーム画面に追加（アプリ化）</button>
+      <button type="button" class="primary-btn full-width" id="btn-pwa-apply-update" hidden>新しいバージョンを今すぐ適用</button>
+      <button type="button" class="secondary-btn full-width" id="btn-pwa-check-update">アプリの更新を確認</button>
+      <button type="button" class="secondary-btn full-width" id="btn-clear-cache">アプリキャッシュを削除して再読込</button>
+      <button type="button" class="secondary-btn full-width danger-text" id="btn-reset-storage">自動保存データを初期化</button>
+    </div>
+
+    <p class="pwa-hint" id="pwa-install-hint">iPhoneは共有ボタン →「ホーム画面に追加」でアプリ化できます。</p>
   </dialog>
 </body>
 </html>

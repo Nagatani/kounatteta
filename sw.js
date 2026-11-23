@@ -1,6 +1,7 @@
-// オフライン対応用 Service Worker（Network-First 戦略）
-// オンライン時は常に最新ファイルを取得し、オフライン時のみキャッシュから返します。
-const CACHE_NAME = 'situ-diagram-v2';
+// オフライン対応＆更新管理用 Service Worker（Network-First 戦略）
+// アプリを更新したいときは APP_VERSION を上げるだけでクライアントに更新が通知されます。
+const APP_VERSION = '1.0.0';
+const CACHE_NAME = 'kounatteta-cache-v' + APP_VERSION;
 const ASSETS = [
   './',
   './index.html',
@@ -16,7 +17,10 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
-  self.skipWaiting();
+  // 初回インストール時は即座に有効化（更新時はクライアントからの SKIP_WAITING で適用）
+  if (!self.registration.active) {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', (event) => {
@@ -28,13 +32,21 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
     fetch(event.request)
       .then((res) => {
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        if (res && res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
         return res;
       })
       .catch(() => caches.match(event.request))
