@@ -976,33 +976,96 @@
     ctx.restore();
   }
 
-  // --- 矢印の描画 ---
+  // --- 矢印の描画（曲線が矢じり底辺中央に正確に接続し、先端が鋭く尖る） ---
   function drawArrow(ctx, obj) {
     const s = obj.start;
     const c = obj.ctrl;
     const e = obj.end;
     const color = obj.color || '#ef4444';
 
+    const headLen = 18;
+    const headHalfAngle = 0.42; // 約24度（シャープな先端）
+    const backDist = headLen * 0.72; // 矢じり底辺の中心までの距離
+
+    // 2次ベジェ曲線上の点 B(t)
+    function bezierAt(t) {
+      const mt = 1 - t;
+      return {
+        x: mt * mt * s.x + 2 * mt * t * c.x + t * t * e.x,
+        y: mt * mt * s.y + 2 * mt * t * c.y + t * t * e.y
+      };
+    }
+
+    // 終点 e から距離 backDist 手前のパラメータ tCut を二分探索で求める
+    let tCut = 0;
+    const startDist = Math.hypot(e.x - s.x, e.y - s.y);
+    if (startDist > backDist * 0.6) {
+      let lo = 0;
+      let hi = 1;
+      for (let i = 0; i < 12; i++) {
+        const mid = (lo + hi) * 0.5;
+        const p = bezierAt(mid);
+        if (Math.hypot(e.x - p.x, e.y - p.y) > backDist) {
+          lo = mid;
+        } else {
+          hi = mid;
+        }
+      }
+      tCut = lo;
+    }
+
+    const basePt = bezierAt(tCut);
+    // 曲線上の根元点 basePt から先端 e への角度を使うことで、強いカーブでも三角形が絶対にズレない
+    let angle = Math.atan2(e.y - basePt.y, e.x - basePt.x);
+    if (Math.hypot(e.x - basePt.x, e.y - basePt.y) < 1) {
+      angle = Math.atan2(e.y - c.y, e.x - c.x);
+      if (Math.hypot(e.x - c.x, e.y - c.y) < 1) {
+        angle = Math.atan2(e.y - s.y, e.x - s.x);
+      }
+    }
+
     ctx.save();
     ctx.strokeStyle = color;
     ctx.fillStyle = color;
-    ctx.lineWidth = 4.5;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
 
-    ctx.beginPath();
-    ctx.moveTo(s.x, s.y);
-    ctx.quadraticCurveTo(c.x, c.y, e.x, e.y);
-    ctx.stroke();
+    // 1. シャフト曲線（t = 0..tCut のみ描画し、先端からはみ出させない）
+    if (tCut > 0.02) {
+      // ド・カステリョのアルゴリズムで [0, tCut] の部分2次ベジェ制御点を算出
+      const cSub = {
+        x: s.x + (c.x - s.x) * tCut,
+        y: s.y + (c.y - s.y) * tCut
+      };
+      // 始点側は丸く、矢じり接続側は矢じり内に収まる位置で止める
+      ctx.lineWidth = 4.5;
+      ctx.lineCap = 'butt';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y);
+      ctx.quadraticCurveTo(cSub.x, cSub.y, basePt.x, basePt.y);
+      ctx.stroke();
 
-    const angle = Math.atan2(e.y - c.y, e.x - c.x);
-    const headLen = 16;
+      // 始点だけ丸く仕上げる
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 2.25, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 2. シャープな矢じり（先端 e が純粋に尖り、根元中央に曲線が収まる）
+    const leftX = e.x - headLen * Math.cos(angle - headHalfAngle);
+    const leftY = e.y - headLen * Math.sin(angle - headHalfAngle);
+    const rightX = e.x - headLen * Math.cos(angle + headHalfAngle);
+    const rightY = e.y - headLen * Math.sin(angle + headHalfAngle);
+    const notchX = e.x - (headLen * 0.78) * Math.cos(angle);
+    const notchY = e.y - (headLen * 0.78) * Math.sin(angle);
+
     ctx.beginPath();
     ctx.moveTo(e.x, e.y);
-    ctx.lineTo(e.x - headLen * Math.cos(angle - 0.5), e.y - headLen * Math.sin(angle - 0.5));
-    ctx.lineTo(e.x - headLen * Math.cos(angle + 0.5), e.y - headLen * Math.sin(angle + 0.5));
+    ctx.lineTo(leftX, leftY);
+    ctx.lineTo(notchX, notchY);
+    ctx.lineTo(rightX, rightY);
     ctx.closePath();
     ctx.fill();
+
     ctx.restore();
   }
 
