@@ -11,6 +11,7 @@
   <link rel="apple-touch-icon" href="./icons/icon.svg">
   <link rel="stylesheet" href="./styles.css">
   <script defer src="./js/templates.js"></script>
+  <script defer src="./js/custom.js"></script>
   <script defer src="./js/renderer.js"></script>
   <script defer src="./js/app.js"></script>
 </head>
@@ -122,12 +123,26 @@
       </form>
     </div>
     <div class="category-tabs" role="tablist" aria-label="カテゴリ">
-      <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-cat="character">ひと・ペット</button>
-      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-cat="traffic">交通・道路</button>
-      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-cat="furniture">家具・モノ</button>
-      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-cat="annotation">文字・矢印</button>
+      <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-cat="character">ひと・猫</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-cat="traffic">交通</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-cat="furniture">家具</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-cat="annotation">文字</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-cat="custom">カスタム</button>
     </div>
     <div class="template-grid" id="template-grid"></div>
+    <div class="custom-panel" id="custom-panel" hidden>
+      <div class="custom-actions">
+        <button type="button" class="primary-btn" id="btn-custom-add-image">＋ 画像を追加</button>
+        <button type="button" class="secondary-btn" id="btn-custom-import-json">JSON読込</button>
+        <input type="file" id="input-custom-image" accept="image/*" hidden>
+        <input type="file" id="input-custom-json" accept=".json,application/json" hidden>
+      </div>
+      <div class="template-grid" id="custom-grid"></div>
+      <div class="custom-empty" id="custom-empty" hidden>
+        <p>スマホの画像や、共有されたカスタムJSONを追加して何度でも配置できます。</p>
+        <button type="button" class="secondary-btn" id="btn-custom-add-sample">見本（うさぎ・関節あり）を追加</button>
+      </div>
+    </div>
   </dialog>
 
   <!-- ポーズ選択シート -->

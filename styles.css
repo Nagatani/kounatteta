@@ -508,8 +508,8 @@
   /* カテゴリタブ */
   .category-tabs {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 4px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3px;
     background: var(--bg-subtle);
     padding: 4px;
     border-radius: var(--radius-sm);
@@ -519,7 +519,7 @@
     height: 36px;
     padding-inline: 2px;
     border-radius: 7px;
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     font-weight: 700;
     color: var(--text-muted);
     white-space: nowrap;
@@ -543,6 +543,111 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
+  }
+
+  .template-grid[hidden] {
+    display: none;
+  }
+
+  /* カスタムオブジェクトパネル */
+  .custom-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .custom-panel[hidden] {
+    display: none;
+  }
+
+  .custom-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .custom-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-subtle);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+  }
+
+  .custom-card-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 6px 8px;
+    width: 100%;
+  }
+
+  .custom-card-main:hover {
+    background: var(--accent-soft);
+  }
+
+  .custom-thumb {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+  }
+
+  .custom-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 2px 6px;
+    border-radius: var(--radius-pill);
+  }
+
+  .custom-card-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-surface);
+  }
+
+  .custom-mini-btn {
+    height: 28px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+
+  .custom-mini-btn:hover {
+    background: var(--bg-subtle);
+    color: var(--text-main);
+  }
+
+  .custom-mini-btn.danger:hover {
+    background: var(--danger-soft);
+    color: var(--danger);
+  }
+
+  .custom-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 12px;
+    text-align: center;
+    background: var(--bg-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .custom-empty[hidden] {
+    display: none;
   }
 
   .template-card {

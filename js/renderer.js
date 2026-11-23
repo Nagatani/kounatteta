@@ -7,6 +7,30 @@
 
   const NS = (global.SituDiagram = global.SituDiagram || {});
 
+  // カスタム画像のキャッシュ（Data URL -> HTMLImageElement）
+  const imageCache = new Map();
+  let onImageLoaded = null;
+
+  function setOnImageLoaded(cb) {
+    onImageLoaded = cb;
+  }
+
+  function getCachedImage(src) {
+    if (!src) return null;
+    let entry = imageCache.get(src);
+    if (!entry) {
+      const img = new Image();
+      entry = { img, loaded: false };
+      imageCache.set(src, entry);
+      img.onload = () => {
+        entry.loaded = true;
+        if (typeof onImageLoaded === 'function') onImageLoaded();
+      };
+      img.src = src;
+    }
+    return entry;
+  }
+
   // 座標変換ヘルパー（オブジェクトのローカル座標 <-> キャンバス論理座標）
   function localToWorld(obj, lx, ly) {
     const sx = obj.flipX ? -1 : 1;
@@ -60,7 +84,7 @@
 
   // オブジェクトのローカル境界ボックスを取得
   function getLocalBounds(ctx, obj) {
-    if (obj.kind === 'furniture' || obj.kind === 'road' || obj.kind === 'signal') {
+    if (obj.kind === 'furniture' || obj.kind === 'road' || obj.kind === 'signal' || obj.kind === 'image') {
       return {
         minX: -obj.w / 2,
         maxX: obj.w / 2,
@@ -348,6 +372,75 @@
     ctx.lineWidth = border;
     ctx.stroke();
 
+    ctx.restore();
+  }
+
+  // --- カスタムボーン（JSON定義）の2パス白抜きピクトグラム描画 ---
+  function drawCustomRig(ctx, obj) {
+    const j = obj.joints || {};
+    const bones = obj.bones || [];
+    const shapes = obj.shapes || [];
+    const color = obj.color || '#1e293b';
+    const border = 3.8;
+
+    function drawParts(col, extraW) {
+      ctx.fillStyle = col;
+      ctx.strokeStyle = col;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      for (const b of bones) {
+        const from = j[b.from];
+        const to = j[b.to];
+        if (!from || !to) continue;
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        if (b.ctrl && j[b.ctrl]) {
+          ctx.quadraticCurveTo(j[b.ctrl].x, j[b.ctrl].y, to.x, to.y);
+        } else {
+          ctx.lineTo(to.x, to.y);
+        }
+        ctx.lineWidth = (Number(b.width) || 14) + extraW;
+        ctx.stroke();
+      }
+
+      for (const s of shapes) {
+        const pt = j[s.at];
+        if (!pt) continue;
+        if (s.type === 'rect') {
+          const rw = (Number(s.w) || 24) + extraW;
+          const rh = (Number(s.h) || 24) + extraW;
+          roundedRectPath(ctx, pt.x - rw / 2, pt.y - rh / 2, rw, rh, (Number(s.rx) || 6) + extraW / 2);
+          ctx.fill();
+        } else {
+          const r = (Number(s.r) || 16) + extraW / 2;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    ctx.save();
+    drawParts(color, border * 2);
+    drawParts('#ffffff', 0);
+    ctx.restore();
+  }
+
+  // --- カスタム画像オブジェクトの描画 ---
+  function drawImageObj(ctx, obj) {
+    const entry = getCachedImage(obj.imageData);
+    const x = -obj.w / 2;
+    const y = -obj.h / 2;
+    ctx.save();
+    if (entry && entry.loaded) {
+      ctx.drawImage(entry.img, x, y, obj.w, obj.h);
+    } else {
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(x, y, obj.w, obj.h);
+    }
     ctx.restore();
   }
 
@@ -1140,7 +1233,7 @@
       const b = getLocalBounds(ctx, obj);
       const rotPt = localToWorld(obj, 0, b.minY - 26);
       handles.push({ type: 'rotate', key: 'rotate', x: rotPt.x, y: rotPt.y });
-    } else if (obj.kind === 'furniture' || obj.kind === 'road' || obj.kind === 'signal') {
+    } else if (obj.kind === 'furniture' || obj.kind === 'road' || obj.kind === 'signal' || obj.kind === 'image') {
       const hw = obj.w / 2;
       const hh = obj.h / 2;
       const corners = [
@@ -1200,9 +1293,10 @@
       ctx.strokeRect(b.minX, b.minY, b.maxX - b.minX, b.maxY - b.minY);
       ctx.setLineDash([]);
 
-      if (obj.kind === 'rig' || obj.kind === 'furniture' || obj.kind === 'road' || obj.kind === 'signal' || obj.kind === 'stamp') {
-        const topY = (obj.kind === 'furniture' || obj.kind === 'road' || obj.kind === 'signal') ? -obj.h / 2 : b.minY;
-        const rotOffset = (obj.kind === 'furniture' || obj.kind === 'road' || obj.kind === 'signal') ? 28 : 26;
+      if (obj.kind === 'rig' || obj.kind === 'furniture' || obj.kind === 'road' || obj.kind === 'signal' || obj.kind === 'image' || obj.kind === 'stamp') {
+        const isBox = obj.kind === 'furniture' || obj.kind === 'road' || obj.kind === 'signal' || obj.kind === 'image';
+        const topY = isBox ? -obj.h / 2 : b.minY;
+        const rotOffset = isBox ? 28 : 26;
         ctx.beginPath();
         ctx.moveTo(0, topY);
         ctx.lineTo(0, topY - rotOffset);
@@ -1273,6 +1367,9 @@
         if (obj.rigType === 'human') drawHuman(ctx, obj);
         else if (obj.rigType === 'cat') drawCat(ctx, obj);
         else if (obj.rigType === 'dog') drawDog(ctx, obj);
+        else if (obj.rigType === 'custom') drawCustomRig(ctx, obj);
+      } else if (obj.kind === 'image') {
+        drawImageObj(ctx, obj);
       } else if (obj.kind === 'road') {
         drawRoad(ctx, obj);
       } else if (obj.kind === 'signal') {
@@ -1351,6 +1448,7 @@
     worldToLocal,
     hitTestHandles,
     hitTestObjects,
-    getLocalBounds
+    getLocalBounds,
+    setOnImageLoaded
   };
 })(window);

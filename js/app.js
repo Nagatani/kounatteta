@@ -52,6 +52,14 @@
 
   const dialogAdd = document.getElementById('dialog-add');
   const templateGrid = document.getElementById('template-grid');
+  const customPanel = document.getElementById('custom-panel');
+  const customGrid = document.getElementById('custom-grid');
+  const customEmpty = document.getElementById('custom-empty');
+  const btnCustomAddImage = document.getElementById('btn-custom-add-image');
+  const btnCustomImportJson = document.getElementById('btn-custom-import-json');
+  const btnCustomAddSample = document.getElementById('btn-custom-add-sample');
+  const inputCustomImage = document.getElementById('input-custom-image');
+  const inputCustomJson = document.getElementById('input-custom-json');
   const dialogPose = document.getElementById('dialog-pose');
   const posePresetGrid = document.getElementById('pose-preset-grid');
   const dialogConfig = document.getElementById('dialog-config');
@@ -239,8 +247,9 @@
 
     barDefault.hidden = true;
     barSelected.hidden = false;
-    btnSelPose.hidden = sel.kind !== 'rig';
+    btnSelPose.hidden = !(sel.kind === 'rig' && sel.rigType !== 'custom');
     btnSelEditText.hidden = sel.kind !== 'text';
+    btnSelColor.hidden = sel.kind === 'image';
     if (sel.kind === 'road') {
       btnSelConfig.hidden = false;
       btnSelConfigLabel.textContent = '道路設定';
@@ -370,6 +379,14 @@
 
   // --- 追加シート ---
   function renderTemplateGrid() {
+    if (state.activeCategory === 'custom') {
+      templateGrid.hidden = true;
+      customPanel.hidden = false;
+      renderCustomGrid();
+      return;
+    }
+    templateGrid.hidden = false;
+    customPanel.hidden = true;
     templateGrid.innerHTML = '';
     const items = NS.TEMPLATES.filter((t) => t.category === state.activeCategory);
     for (const tpl of items) {
@@ -410,6 +427,135 @@
       templateGrid.appendChild(btn);
     }
   }
+
+  // --- カスタムオブジェクト管理（画像読込・JSON共有） ---
+  async function renderCustomGrid() {
+    const items = await NS.Custom.listAll();
+    customGrid.innerHTML = '';
+    customEmpty.hidden = items.length > 0;
+
+    for (const item of items) {
+      const card = document.createElement('div');
+      card.className = 'custom-card';
+
+      const mainBtn = document.createElement('button');
+      mainBtn.type = 'button';
+      mainBtn.className = 'custom-card-main';
+
+      if (item.kind === 'custom-image') {
+        const img = document.createElement('img');
+        img.className = 'custom-thumb';
+        img.src = item.imageData;
+        img.alt = '';
+        mainBtn.appendChild(img);
+      } else {
+        const badge = document.createElement('span');
+        badge.className = 'custom-badge';
+        badge.textContent = 'ボーンJSON';
+        mainBtn.appendChild(badge);
+      }
+
+      const label = document.createElement('span');
+      label.className = 'template-label';
+      label.textContent = item.name || 'カスタム';
+      mainBtn.appendChild(label);
+
+      mainBtn.addEventListener('click', () => {
+        const cx = state.width / 2 + (Math.random() * 40 - 20);
+        const cy = state.height / 2 + (Math.random() * 40 - 20);
+        const newObj = NS.Custom.instantiateOnCanvas(item, cx, cy);
+        if (!newObj) return;
+        newObj.id = uid();
+        state.objects.push(newObj);
+        state.selectedId = newObj.id;
+        dialogAdd.close();
+        updateUI();
+        render();
+        commitHistory();
+        showToast(
+          newObj.kind === 'rig'
+            ? '青い丸をドラッグして関節を動かせます'
+            : '角の丸でサイズ変更、緑の丸で回転できます'
+        );
+      });
+
+      const footer = document.createElement('div');
+      footer.className = 'custom-card-footer';
+
+      const btnExportJson = document.createElement('button');
+      btnExportJson.type = 'button';
+      btnExportJson.className = 'custom-mini-btn';
+      btnExportJson.textContent = 'JSON';
+      btnExportJson.setAttribute('aria-label', `${item.name}をJSONで書き出す`);
+      btnExportJson.addEventListener('click', () => {
+        NS.Custom.exportItemAsJson(item);
+        showToast(`「${item.name}」をJSONで書き出しました`);
+      });
+
+      const btnDel = document.createElement('button');
+      btnDel.type = 'button';
+      btnDel.className = 'custom-mini-btn danger';
+      btnDel.textContent = '削除';
+      btnDel.setAttribute('aria-label', `${item.name}を削除`);
+      btnDel.addEventListener('click', async () => {
+        await NS.Custom.deleteItem(item.id);
+        renderCustomGrid();
+        showToast(`「${item.name}」を削除しました`);
+      });
+
+      footer.appendChild(btnExportJson);
+      footer.appendChild(btnDel);
+      card.appendChild(mainBtn);
+      card.appendChild(footer);
+      customGrid.appendChild(card);
+    }
+  }
+
+  btnCustomAddImage.addEventListener('click', () => {
+    inputCustomImage.value = '';
+    inputCustomImage.click();
+  });
+
+  inputCustomImage.addEventListener('change', async () => {
+    const file = inputCustomImage.files && inputCustomImage.files[0];
+    if (!file) return;
+    try {
+      const item = await NS.Custom.createFromImageFile(file);
+      await renderCustomGrid();
+      showToast(`画像「${item.name}」を登録しました（タップで配置）`);
+    } catch (err) {
+      showToast(err.message || '画像の読み込みに失敗しました');
+    }
+  });
+
+  btnCustomImportJson.addEventListener('click', () => {
+    inputCustomJson.value = '';
+    inputCustomJson.click();
+  });
+
+  inputCustomJson.addEventListener('change', async () => {
+    const file = inputCustomJson.files && inputCustomJson.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const imported = await NS.Custom.importFromJsonText(text);
+      await renderCustomGrid();
+      showToast(`${imported.length}件のカスタムJSONを読み込みました`);
+    } catch (err) {
+      showToast(err.message || 'JSONの読み込みに失敗しました');
+    }
+  });
+
+  btnCustomAddSample.addEventListener('click', async () => {
+    try {
+      const sampleJson = JSON.stringify(NS.Custom.getSampleCustomRig());
+      await NS.Custom.importFromJsonText(sampleJson);
+      await renderCustomGrid();
+      showToast('見本「うさぎ（関節あり）」を登録しました');
+    } catch (_) {
+      showToast('見本の追加に失敗しました');
+    }
+  });
 
   document.querySelectorAll('.tab-btn').forEach((tab) => {
     tab.addEventListener('click', () => {
@@ -976,6 +1122,7 @@
 
   // --- 初期化 ---
   function init() {
+    Renderer.setOnImageLoaded(render);
     const loaded = loadFromStorage();
     if (!loaded) {
       // 初回は「信号ありの交差点」サンプルを表示

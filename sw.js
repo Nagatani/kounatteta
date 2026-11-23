@@ -9,6 +9,7 @@ const ASSETS = [
   './manifest.json',
   './icons/icon.svg',
   './js/templates.js',
+  './js/custom.js',
   './js/renderer.js',
   './js/app.js'
 ];
