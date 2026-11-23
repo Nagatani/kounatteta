@@ -8,7 +8,7 @@
   const NS = global.SituDiagram;
   const Renderer = NS.Renderer;
 
-  const APP_VERSION = '1.0.0';
+  const APP_VERSION = '1.1.0';
   const STORAGE_KEY = 'situ-diagram-state-v4';
   const RATIOS = [
     { id: '1:1', label: '1:1', width: 600, height: 600 },
