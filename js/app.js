@@ -8,7 +8,7 @@
   const NS = global.SituDiagram;
   const Renderer = NS.Renderer;
 
-  const FALLBACK_VERSION = '1.1.0';
+  const FALLBACK_VERSION = '1.2.0';
   let appVersion = FALLBACK_VERSION;
   const STORAGE_KEY = 'situ-diagram-state-v4';
   const RATIOS = [
@@ -89,9 +89,11 @@
   const appInfoVersion = document.getElementById('app-info-version');
   const appInfoMode = document.getElementById('app-info-mode');
   const appInfoSw = document.getElementById('app-info-sw');
+  const appInfoPersist = document.getElementById('app-info-persist');
   const btnPwaInstall = document.getElementById('btn-pwa-install');
   const btnPwaApplyUpdate = document.getElementById('btn-pwa-apply-update');
   const btnPwaCheckUpdate = document.getElementById('btn-pwa-check-update');
+  const btnBackupCustom = document.getElementById('btn-backup-custom');
   const btnClearCache = document.getElementById('btn-clear-cache');
   const btnResetStorage = document.getElementById('btn-reset-storage');
   const pwaInstallHint = document.getElementById('pwa-install-hint');
@@ -1041,6 +1043,23 @@
     }
   }
 
+  // Persistent Storage API でストレージ自動削除からの保護をリクエスト
+  async function ensurePersistentStorage() {
+    if (!navigator.storage || typeof navigator.storage.persisted !== 'function') {
+      appInfoPersist.textContent = '標準保存';
+      return;
+    }
+    try {
+      let persisted = await navigator.storage.persisted();
+      if (!persisted && typeof navigator.storage.persist === 'function') {
+        persisted = await navigator.storage.persist();
+      }
+      appInfoPersist.textContent = persisted ? '保護済み（永続）' : '通常（ブラウザ管理）';
+    } catch (_) {
+      appInfoPersist.textContent = '通常（ブラウザ管理）';
+    }
+  }
+
   function refreshAppMenuStatus() {
     appInfoVersion.textContent = 'v' + appVersion;
     const standalone = isStandaloneMode();
@@ -1120,7 +1139,21 @@
   btnAppMenu.addEventListener('click', () => {
     refreshAppMenuStatus();
     loadManifestVersion();
+    ensurePersistentStorage();
     dialogAppMenu.showModal();
+  });
+
+  btnBackupCustom.addEventListener('click', async () => {
+    try {
+      const count = await NS.Custom.exportAllAsJson();
+      if (count === 0) {
+        showToast('バックアップするカスタムオブジェクトがありません');
+      } else {
+        showToast(`${count}件のカスタムオブジェクトを書き出しました`);
+      }
+    } catch (_) {
+      showToast('バックアップの書き出しに失敗しました');
+    }
   });
 
   btnPwaInstall.addEventListener('click', async () => {
@@ -1220,6 +1253,7 @@
     commitHistory();
     showToast('タップして選択・ドラッグで移動や設定ができます');
     loadManifestVersion();
+    ensurePersistentStorage();
     setupPwa();
   }
 

@@ -1,6 +1,6 @@
 // オフライン対応＆更新管理用 Service Worker（Network-First 戦略）
 // アプリを更新したいときは APP_VERSION を上げるだけでクライアントに更新が通知されます。
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 const CACHE_NAME = 'kounatteta-cache-v' + APP_VERSION;
 const ASSETS = [
   './',

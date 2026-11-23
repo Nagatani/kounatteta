@@ -6,15 +6,15 @@
   <meta name="theme-color" content="#ffffff">
   <meta name="description" content="SNS投稿向けに、棒人間・ペット・家具を配置して状況をわかりやすく図解できるシンプル作図アプリ">
   <title>こうなってた - 状況説明図メーカー</title>
-  <link rel="manifest" href="./manifest.json?v=1.1.0">
-  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg?v=1.1.0">
-  <link rel="apple-touch-icon" href="./icons/icon.svg?v=1.1.0">
-  <link rel="stylesheet" href="./styles.css?v=1.1.0">
-  <script defer src="./js/templates.js?v=1.1.0"></script>
-  <script defer src="./js/custom.js?v=1.1.0"></script>
-  <script defer src="./js/renderer.js?v=1.1.0"></script>
-  <script defer src="./js/rig-editor.js?v=1.1.0"></script>
-  <script defer src="./js/app.js?v=1.1.0"></script>
+  <link rel="manifest" href="./manifest.json?v=1.2.0">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg?v=1.2.0">
+  <link rel="apple-touch-icon" href="./icons/icon.svg?v=1.2.0">
+  <link rel="stylesheet" href="./styles.css?v=1.2.0">
+  <script defer src="./js/templates.js?v=1.2.0"></script>
+  <script defer src="./js/custom.js?v=1.2.0"></script>
+  <script defer src="./js/renderer.js?v=1.2.0"></script>
+  <script defer src="./js/rig-editor.js?v=1.2.0"></script>
+  <script defer src="./js/app.js?v=1.2.0"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -259,7 +259,7 @@
     <dl class="app-info-list">
       <div class="app-info-row">
         <dt>バージョン</dt>
-        <dd id="app-info-version">v1.1.0</dd>
+        <dd id="app-info-version">v1.2.0</dd>
       </div>
       <div class="app-info-row">
         <dt>動作モード</dt>
@@ -269,12 +269,17 @@
         <dt>更新・オフライン</dt>
         <dd id="app-info-sw">確認中...</dd>
       </div>
+      <div class="app-info-row">
+        <dt>データ保護</dt>
+        <dd id="app-info-persist">確認中...</dd>
+      </div>
     </dl>
 
     <div class="export-actions">
       <button type="button" class="primary-btn full-width" id="btn-pwa-install" hidden>ホーム画面に追加（アプリ化）</button>
       <button type="button" class="primary-btn full-width" id="btn-pwa-apply-update" hidden>新しいバージョンを今すぐ適用</button>
       <button type="button" class="secondary-btn full-width" id="btn-pwa-check-update">アプリの更新を確認</button>
+      <button type="button" class="secondary-btn full-width" id="btn-backup-custom">カスタム一括バックアップ（JSON）</button>
       <button type="button" class="secondary-btn full-width" id="btn-clear-cache">アプリキャッシュを削除して再読込</button>
       <button type="button" class="secondary-btn full-width danger-text" id="btn-reset-storage">自動保存データを初期化</button>
     </div>

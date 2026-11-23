@@ -225,6 +225,26 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  // 全カスタムオブジェクトを1つのバックアップJSONファイルとして書き出し
+  async function exportAllAsJson() {
+    const items = await listAll();
+    if (items.length === 0) return 0;
+    const payload = items.map((item) => {
+      const copy = Object.assign({ format: FORMAT_ID }, item);
+      delete copy.createdAt;
+      return copy;
+    });
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    a.download = `kounatteta-custom-backup-${stamp}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return items.length;
+  }
+
   // カスタムオブジェクト定義からキャンバス配置用インスタンスを生成
   function instantiateOnCanvas(item, x, y) {
     if (item.kind === 'custom-image') {
@@ -297,6 +317,7 @@
     createFromImageFile,
     importFromJsonText,
     exportItemAsJson,
+    exportAllAsJson,
     instantiateOnCanvas,
     getSampleCustomRig
   };
