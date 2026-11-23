@@ -1,0 +1,18 @@
+{
+  "name": "こうなってた - 状況説明図メーカー",
+  "short_name": "こうなってた",
+  "description": "SNS投稿向けに、棒人間・ペット・家具を配置して状況をわかりやすく図解できるシンプル作図ツール",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f6f8",
+  "theme_color": "#ffffff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

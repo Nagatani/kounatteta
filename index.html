@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="SNS投稿向けに、棒人間・ペット・家具を配置して状況をわかりやすく図解できるシンプル作図アプリ">
+  <title>こうなってた - 状況説明図メーカー</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+  <link rel="apple-touch-icon" href="./icons/icon.svg">
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./js/templates.js"></script>
+  <script defer src="./js/renderer.js"></script>
+  <script defer src="./js/app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 上部ツールバー（シンプル1行） -->
+    <header class="top-bar">
+      <div class="top-bar-group">
+        <h1 class="app-title">こうなってた</h1>
+        <button type="button" class="icon-btn" id="btn-undo" aria-label="元に戻す" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+        </button>
+        <button type="button" class="icon-btn" id="btn-redo" aria-label="やり直す" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+        </button>
+      </div>
+
+      <div class="top-bar-group">
+        <button type="button" class="pill-btn" id="btn-ratio" aria-label="キャンバス比率を切替">1:1</button>
+        <button type="button" class="icon-btn" id="btn-grid" aria-label="方眼グリッド切替" aria-pressed="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+        </button>
+        <button type="button" class="primary-btn" id="btn-export">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>保存</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- メインキャンバス領域 -->
+    <main class="stage-area" id="stage-area">
+      <div class="canvas-frame" id="canvas-frame">
+        <canvas id="diagram-canvas" aria-label="作図キャンバス"></canvas>
+      </div>
+      <p class="hint-toast" id="hint-toast" role="status" aria-live="polite"></p>
+    </main>
+
+    <!-- 下部ツールバー（選択状態で自動切替） -->
+    <footer class="bottom-bar" id="bottom-bar">
+      <!-- 未選択時の基本アクション -->
+      <div class="bar-mode" id="bar-default">
+        <button type="button" class="fab-add" id="btn-open-add">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>追加</span>
+        </button>
+        <button type="button" class="tool-btn" id="btn-open-samples">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span>作例</span>
+        </button>
+        <button type="button" class="tool-btn" id="btn-clear-all">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          <span>全消去</span>
+        </button>
+      </div>
+
+      <!-- オブジェクト選択時のコンテキストアクション -->
+      <div class="bar-mode bar-scroll" id="bar-selected" hidden>
+        <button type="button" class="tool-btn accent" id="btn-sel-pose" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2.5"/><path d="M12 8v6M8 11l4-2 4 2M9 21l3-7 3 7"/></svg>
+          <span>ポーズ</span>
+        </button>
+        <button type="button" class="tool-btn accent" id="btn-sel-edit-text" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          <span>文字編集</span>
+        </button>
+        <button type="button" class="tool-btn" id="btn-sel-color">
+          <span class="color-dot" id="sel-color-dot" aria-hidden="true"></span>
+          <span>色</span>
+        </button>
+        <button type="button" class="tool-btn" id="btn-sel-flip">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M8 7l-5 5 5 5V7zM16 7l5 5-5 5V7z"/></svg>
+          <span>反転</span>
+        </button>
+        <button type="button" class="tool-btn" id="btn-sel-front">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></svg>
+          <span>前面</span>
+        </button>
+        <button type="button" class="tool-btn" id="btn-sel-back">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="12" height="12" rx="2"/><path d="M20 8v10a2 2 0 0 1-2 2H8"/></svg>
+          <span>背面</span>
+        </button>
+        <button type="button" class="tool-btn" id="btn-sel-duplicate">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span>複製</span>
+        </button>
+        <button type="button" class="tool-btn danger" id="btn-sel-delete">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          <span>削除</span>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- 追加ボトムシート（ネイティブ dialog） -->
+  <dialog class="sheet-dialog" id="dialog-add" closedby="any" aria-labelledby="dialog-add-title">
+    <div class="sheet-header">
+      <h2 id="dialog-add-title">オブジェクトを追加</h2>
+      <form method="dialog">
+        <button type="submit" class="close-btn" aria-label="閉じる">✕</button>
+      </form>
+    </div>
+    <div class="category-tabs" role="tablist" aria-label="カテゴリ">
+      <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-cat="character">ひと・ペット</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-cat="furniture">家具・モノ</button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-cat="annotation">文字・矢印・記号</button>
+    </div>
+    <div class="template-grid" id="template-grid"></div>
+  </dialog>
+
+  <!-- ポーズ選択シート -->
+  <dialog class="sheet-dialog" id="dialog-pose" closedby="any" aria-labelledby="dialog-pose-title">
+    <div class="sheet-header">
+      <h2 id="dialog-pose-title">ポーズを選択</h2>
+      <form method="dialog">
+        <button type="submit" class="close-btn" aria-label="閉じる">✕</button>
+      </form>
+    </div>
+    <div class="sheet-section">
+      <h3>プリセット（あとから関節をドラッグ調整できます）</h3>
+      <div class="chip-grid" id="pose-preset-grid"></div>
+    </div>
+  </dialog>
+
+  <!-- 色選択シート -->
+  <dialog class="sheet-dialog" id="dialog-color" closedby="any" aria-labelledby="dialog-color-title">
+    <div class="sheet-header">
+      <h2 id="dialog-color-title">カラーを選択</h2>
+      <form method="dialog">
+        <button type="submit" class="close-btn" aria-label="閉じる">✕</button>
+      </form>
+    </div>
+    <div class="color-grid" id="color-grid"></div>
+  </dialog>
+
+  <!-- テキスト編集ダイアログ -->
+  <dialog class="modal-dialog" id="dialog-text" closedby="any" aria-labelledby="dialog-text-title">
+    <div class="sheet-header">
+      <h2 id="dialog-text-title">テキストを編集</h2>
+      <form method="dialog">
+        <button type="submit" class="close-btn" aria-label="閉じる">✕</button>
+      </form>
+    </div>
+    <form method="dialog" id="form-text-edit" class="text-edit-form">
+      <label for="input-obj-text" class="sr-only">表示テキスト</label>
+      <textarea id="input-obj-text" rows="3" placeholder="例：ここが狭い…"></textarea>
+      <div class="size-row">
+        <label for="input-font-size">文字サイズ</label>
+        <input type="range" id="input-font-size" min="14" max="42" step="2" value="20">
+        <output id="output-font-size" for="input-font-size">20</output>
+      </div>
+      <div class="modal-actions">
+        <button type="submit" value="cancel" class="secondary-btn">キャンセル</button>
+        <button type="submit" value="save" class="primary-btn" autofocus>反映する</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- サンプル選択シート -->
+  <dialog class="sheet-dialog" id="dialog-samples" closedby="any" aria-labelledby="dialog-samples-title">
+    <div class="sheet-header">
+      <h2 id="dialog-samples-title">作例から始める</h2>
+      <form method="dialog">
+        <button type="submit" class="close-btn" aria-label="閉じる">✕</button>
+      </form>
+    </div>
+    <div class="sample-list" id="sample-list"></div>
+  </dialog>
+
+  <!-- 画像書き出しモーダル -->
+  <dialog class="modal-dialog" id="dialog-export" closedby="any" aria-labelledby="dialog-export-title">
+    <div class="sheet-header">
+      <h2 id="dialog-export-title">画像を書き出し</h2>
+      <form method="dialog">
+        <button type="submit" class="close-btn" aria-label="閉じる">✕</button>
+      </form>
+    </div>
+    <div class="export-preview-wrap">
+      <img id="export-preview-img" alt="書き出し画像のプレビュー" width="600" height="600">
+    </div>
+    <div class="export-actions">
+      <button type="button" class="primary-btn full-width" id="btn-download-png">PNG画像を保存</button>
+      <button type="button" class="secondary-btn full-width" id="btn-share-png" hidden>SNS・アプリで共有</button>
+      <button type="button" class="secondary-btn full-width" id="btn-copy-png">画像をコピー</button>
+    </div>
+  </dialog>
+
+  <!-- 全消去確認ダイアログ -->
+  <dialog class="modal-dialog" id="dialog-clear" closedby="any" aria-labelledby="dialog-clear-title">
+    <div class="sheet-header">
+      <h2 id="dialog-clear-title">キャンバスを空にしますか？</h2>
+    </div>
+    <p class="modal-desc">配置したオブジェクトがすべて消去されます（「元に戻す」で復元できます）。</p>
+    <form method="dialog" class="modal-actions">
+      <button type="submit" value="cancel" class="secondary-btn" autofocus>キャンセル</button>
+      <button type="submit" value="clear" class="danger-btn">すべて消去</button>
+    </form>
+  </dialog>
+</body>
+</html>
